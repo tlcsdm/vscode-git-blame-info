@@ -76,7 +76,6 @@ export class BlameProvider implements vscode.Disposable {
         let currentAuthorTime = 0;
         let currentAuthorTz = '';
         let currentSummary = '';
-        let currentFilename = '';
         let currentLineNumber = 0;
 
         for (const line of lines) {
@@ -99,7 +98,6 @@ export class BlameProvider implements vscode.Disposable {
             } else if (line.startsWith('summary ')) {
                 currentSummary = line.substring(8);
             } else if (line.startsWith('filename ')) {
-                currentFilename = line.substring(9);
                 // filename is the last header before the content line
                 result.push({
                     commit: currentCommit,
@@ -108,7 +106,7 @@ export class BlameProvider implements vscode.Disposable {
                     authorTime: currentAuthorTime,
                     authorTz: currentAuthorTz,
                     summary: currentSummary,
-                    filename: currentFilename,
+                    filename: line.substring(9),
                     lineNumber: currentLineNumber
                 });
             }

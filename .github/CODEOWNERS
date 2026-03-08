@@ -1,0 +1,9 @@
+.github/**                    @unknowIfGuestInDream
+.vscode/**                    @unknowIfGuestInDream
+src/**                        @unknowIfGuestInDream
+package.json                  @unknowIfGuestInDream
+tsconfig.json                 @unknowIfGuestInDream
+eslint.config.mjs             @unknowIfGuestInDream
+LICENSE                       @unknowIfGuestInDream
+README.md                     @unknowIfGuestInDream
+CHANGELOG.md                  @unknowIfGuestInDream

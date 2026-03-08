@@ -1,0 +1,12 @@
+{
+  "version": "0.1.0",
+  "tests": [
+    {
+      "label": "Extension Tests",
+      "files": "out/test/**/*.test.js",
+      "mocha": {
+        "timeout": 20000
+      }
+    }
+  ]
+}

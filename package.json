@@ -1,0 +1,144 @@
+{
+  "name": "vscode-git-blame-info",
+  "displayName": "Git Blame Info",
+  "description": "Display git blame information in the editor gutter with color-coded annotations, inspired by Eclipse EGit",
+  "version": "0.0.1",
+  "publisher": "unknowIfGuestInDream",
+  "icon": "images/icon.png",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tlcsdm/vscode-git-blame-info"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "git",
+    "blame",
+    "annotation",
+    "revision",
+    "egit"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "gitBlameInfo.showRevisionInformation",
+        "title": "Show Revision Information",
+        "category": "Git Blame Info"
+      },
+      {
+        "command": "gitBlameInfo.hideRevisionInformation",
+        "title": "Hide Revision Information",
+        "category": "Git Blame Info"
+      },
+      {
+        "command": "gitBlameInfo.toggleAuthor",
+        "title": "Toggle Author",
+        "category": "Git Blame Info: Revisions"
+      },
+      {
+        "command": "gitBlameInfo.toggleDate",
+        "title": "Toggle Date",
+        "category": "Git Blame Info: Revisions"
+      },
+      {
+        "command": "gitBlameInfo.toggleCommitId",
+        "title": "Toggle Commit ID",
+        "category": "Git Blame Info: Revisions"
+      }
+    ],
+    "menus": {
+      "editor/lineNumber/context": [
+        {
+          "command": "gitBlameInfo.showRevisionInformation",
+          "when": "!gitBlameInfo.isActive",
+          "group": "1_modification"
+        },
+        {
+          "command": "gitBlameInfo.hideRevisionInformation",
+          "when": "gitBlameInfo.isActive",
+          "group": "1_modification"
+        }
+      ],
+      "editor/title": [
+        {
+          "submenu": "gitBlameInfo.revisions",
+          "when": "gitBlameInfo.isActive",
+          "group": "navigation"
+        }
+      ],
+      "gitBlameInfo.revisions": [
+        {
+          "command": "gitBlameInfo.toggleAuthor",
+          "group": "1_display"
+        },
+        {
+          "command": "gitBlameInfo.toggleDate",
+          "group": "1_display"
+        },
+        {
+          "command": "gitBlameInfo.toggleCommitId",
+          "group": "1_display"
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "id": "gitBlameInfo.revisions",
+        "label": "Revisions"
+      }
+    ],
+    "configuration": {
+      "title": "Git Blame Info",
+      "properties": {
+        "gitBlameInfo.showAuthor": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show author name in the gutter annotation"
+        },
+        "gitBlameInfo.showDate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show commit date in the gutter annotation"
+        },
+        "gitBlameInfo.showCommitId": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show abbreviated commit ID in the gutter annotation"
+        },
+        "gitBlameInfo.dateFormat": {
+          "type": "string",
+          "default": "YYYY-MM-DD",
+          "description": "Date format for the gutter annotation"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test --config ./.vscode-test.json"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.2.2",
+    "eslint": "^9.18.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.20.0"
+  }
+}

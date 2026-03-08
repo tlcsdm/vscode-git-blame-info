@@ -2,8 +2,17 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 
 suite('Extension Test Suite', () => {
+    const extensionId = 'unknowIfGuestInDream.vscode-git-blame-info';
+
+    suiteSetup(async () => {
+        const extension = vscode.extensions.getExtension(extensionId);
+        if (extension && !extension.isActive) {
+            await extension.activate();
+        }
+    });
+
     test('Extension should be present', () => {
-        const extension = vscode.extensions.getExtension('unknowIfGuestInDream.vscode-git-blame-info');
+        const extension = vscode.extensions.getExtension(extensionId);
         assert.ok(extension);
     });
 

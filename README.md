@@ -50,6 +50,9 @@ When revision information is active, a **Revisions** submenu appears in the edit
 3. Search for "Extensions: Install from VSIX..."
 4. Select the downloaded `.vsix` file
 
+### From Jenkins
+Download from [Jenkins](https://jenkins.tlcsdm.com/job/vscode-plugin/job/vscode-git-blame-info/)
+
 ## Build
 
 This project uses TypeScript and npm (Node.js 22).

@@ -36,6 +36,44 @@ When revision information is active, a **Revisions** submenu appears in the edit
 | `gitBlameInfo.showCommitId` | `false` | Show abbreviated commit ID in gutter |
 | `gitBlameInfo.dateFormat` | `YYYY-MM-DD` | Date format for gutter annotation |
 
+## Installation
+
+### From VS Code Marketplace
+1. Open VS Code
+2. Go to Extensions (`Ctrl+Shift+X`)
+3. Search for "Git Blame Info"
+4. Click Install
+
+### From VSIX File
+1. Download the `.vsix` file from [Releases](https://github.com/tlcsdm/vscode-git-blame-info/releases)
+2. In VS Code, open Command Palette (`Ctrl+Shift+P`)
+3. Search for "Extensions: Install from VSIX..."
+4. Select the downloaded `.vsix` file
+
+## Build
+
+This project uses TypeScript and npm (Node.js 22).
+
+```bash
+# Install dependencies
+npm install
+
+# Compile
+npm run compile
+
+# Watch mode (for development)
+npm run watch
+
+# Lint
+npm run lint
+
+# Package
+npx @vscode/vsce package
+
+# Test
+npm run test
+```
+
 ## Requirements
 
 - Visual Studio Code ^1.85.0

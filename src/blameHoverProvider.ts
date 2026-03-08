@@ -2,16 +2,19 @@ import * as vscode from 'vscode';
 import { BlameProvider } from './blameProvider';
 
 export class BlameHoverProvider implements vscode.HoverProvider {
+    private _isActive = false;
+
     constructor(private blameProvider: BlameProvider) {}
+
+    set isActive(value: boolean) {
+        this._isActive = value;
+    }
 
     async provideHover(
         document: vscode.TextDocument,
         position: vscode.Position
     ): Promise<vscode.Hover | undefined> {
-        // Only show hover when blame is active
-        const isActive = await vscode.commands.executeCommand<boolean>('getContext', 'gitBlameInfo.isActive');
-        // If context is not set, use a fallback check
-        if (isActive === false) {
+        if (!this._isActive) {
             return undefined;
         }
 
@@ -39,18 +42,16 @@ export class BlameHoverProvider implements vscode.HoverProvider {
         markdown.appendMarkdown(`**Commit:** \`${blameInfo.commit.substring(0, 7)}\`\n\n`);
         markdown.appendMarkdown('---\n\n');
 
-        // Open Commit command - uses the built-in Git extension's show commit command
-        const openCommitArgs = encodeURIComponent(JSON.stringify([blameInfo.commit]));
+        // Open Commit - uses our registered command to show the commit diff
+        const openCommitArgs = encodeURIComponent(JSON.stringify([document.uri.toString(), blameInfo.commit]));
         markdown.appendMarkdown(
-            `[$(git-commit) Open Commit](command:git.viewCommit?${openCommitArgs} "View this commit")`
+            `[$(git-commit) Open Commit](command:gitBlameInfo.openCommit?${openCommitArgs} "View this commit")`
         );
         markdown.appendMarkdown('&nbsp;&nbsp;&nbsp;');
 
-        // Open History command - uses the built-in timeline view
-        const fileUri = document.uri.toString();
-        const openHistoryArgs = encodeURIComponent(JSON.stringify([fileUri]));
+        // Open History - focuses the built-in timeline view
         markdown.appendMarkdown(
-            `[$(history) Open History](command:timeline.focus?${openHistoryArgs} "View file history")`
+            `[$(history) Open History](command:gitBlameInfo.openHistory "View file history")`
         );
 
         return new vscode.Hover(markdown, new vscode.Range(position.line, 0, position.line, 0));

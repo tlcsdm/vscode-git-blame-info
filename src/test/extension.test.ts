@@ -14,6 +14,8 @@ suite('Extension Test Suite', () => {
         assert.ok(commands.includes('gitBlameInfo.toggleAuthor'));
         assert.ok(commands.includes('gitBlameInfo.toggleDate'));
         assert.ok(commands.includes('gitBlameInfo.toggleCommitId'));
+        assert.ok(commands.includes('gitBlameInfo.openCommit'));
+        assert.ok(commands.includes('gitBlameInfo.openHistory'));
     });
 
     test('Configuration defaults should be correct', () => {

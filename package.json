@@ -52,6 +52,16 @@
         "command": "gitBlameInfo.toggleCommitId",
         "title": "Toggle Commit ID",
         "category": "Git Blame Info: Revisions"
+      },
+      {
+        "command": "gitBlameInfo.openCommit",
+        "title": "Open Commit",
+        "category": "Git Blame Info"
+      },
+      {
+        "command": "gitBlameInfo.openHistory",
+        "title": "Open History",
+        "category": "Git Blame Info"
       }
     ],
     "menus": {

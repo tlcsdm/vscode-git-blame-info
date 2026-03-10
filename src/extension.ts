@@ -4,6 +4,7 @@ import { execFile } from 'child_process';
 import { BlameProvider } from './blameProvider';
 import { BlameDecorationProvider } from './blameDecorationProvider';
 import { BlameHoverProvider } from './blameHoverProvider';
+import { GitContentProvider } from './gitContentProvider';
 
 let blameProvider: BlameProvider;
 let blameDecorationProvider: BlameDecorationProvider;
@@ -13,20 +14,26 @@ let outputChannel: vscode.OutputChannel;
 export function activate(context: vscode.ExtensionContext): void {
     blameProvider = new BlameProvider();
     blameDecorationProvider = new BlameDecorationProvider(blameProvider);
-    blameHoverProvider = new BlameHoverProvider(blameProvider);
+    blameHoverProvider = new BlameHoverProvider(blameProvider, blameDecorationProvider);
     outputChannel = vscode.window.createOutputChannel('Git Blame Info');
 
+    const gitContentProvider = new GitContentProvider();
+
     context.subscriptions.push(
+        vscode.workspace.registerTextDocumentContentProvider('git-blame-info', gitContentProvider),
+
         vscode.commands.registerCommand('gitBlameInfo.showRevisionInformation', () => {
-            vscode.commands.executeCommand('setContext', 'gitBlameInfo.isActive', true);
-            blameHoverProvider.isActive = true;
             blameDecorationProvider.activate();
+            blameHoverProvider.isActive = true;
+            updateContextForActiveEditor();
         }),
 
         vscode.commands.registerCommand('gitBlameInfo.hideRevisionInformation', () => {
-            vscode.commands.executeCommand('setContext', 'gitBlameInfo.isActive', false);
-            blameHoverProvider.isActive = false;
             blameDecorationProvider.deactivate();
+            updateContextForActiveEditor();
+            if (!blameDecorationProvider.hasActiveEditors()) {
+                blameHoverProvider.isActive = false;
+            }
         }),
 
         vscode.commands.registerCommand('gitBlameInfo.toggleAuthor', () => {
@@ -66,6 +73,7 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.window.onDidChangeActiveTextEditor(editor => {
             if (editor) {
                 blameDecorationProvider.onEditorChanged(editor);
+                updateContextForActiveEditor();
             }
         }),
 
@@ -78,6 +86,12 @@ export function activate(context: vscode.ExtensionContext): void {
         blameDecorationProvider,
         outputChannel
     );
+}
+
+function updateContextForActiveEditor(): void {
+    const editor = vscode.window.activeTextEditor;
+    const isActive = editor ? blameDecorationProvider.isActiveForEditor(editor) : false;
+    vscode.commands.executeCommand('setContext', 'gitBlameInfo.isActive', isActive);
 }
 
 function openCommitDiff(fileUriStr: string, commitHash: string): void {
@@ -98,21 +112,15 @@ function openCommitDiff(fileUriStr: string, commitHash: string): void {
         query: JSON.stringify({ commit: commitHash, path: fileUri.fsPath })
     });
 
-    // Try to use VS Code's built-in git extension first
-    const gitExtension = vscode.extensions.getExtension('vscode.git');
-    if (gitExtension) {
-        vscode.commands.executeCommand(
-            'vscode.diff',
-            beforeUri,
-            afterUri,
-            `${fileName} (${shortHash})`
-        ).then(undefined, () => {
-            // Fallback: show commit details in output channel
-            showCommitInOutputChannel(cwd, commitHash);
-        });
-    } else {
+    vscode.commands.executeCommand(
+        'vscode.diff',
+        beforeUri,
+        afterUri,
+        `${fileName} (${shortHash})`
+    ).then(undefined, () => {
+        // Fallback: show commit details in output channel
         showCommitInOutputChannel(cwd, commitHash);
-    }
+    });
 }
 
 function showCommitInOutputChannel(cwd: string, commitHash: string): void {

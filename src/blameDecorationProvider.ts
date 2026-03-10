@@ -2,7 +2,9 @@ import * as vscode from 'vscode';
 import { BlameProvider, BlameInfo } from './blameProvider';
 
 export class BlameDecorationProvider implements vscode.Disposable {
-    private isActive = false;
+    private static readonly GUTTER_CHAR_WIDTH_EM = 0.55;
+    private static readonly GUTTER_MIN_WIDTH_EM = 8;
+    private activeUris = new Set<string>();
     private decorationTypes: vscode.TextEditorDecorationType[] = [];
     private readonly commitColors: string[] = [
         'rgba(255, 235, 59, 0.15)',
@@ -23,34 +25,45 @@ export class BlameDecorationProvider implements vscode.Disposable {
 
     dispose(): void {
         this.clearDecorations();
+        this.activeUris.clear();
     }
 
     activate(): void {
-        this.isActive = true;
         const editor = vscode.window.activeTextEditor;
-        if (editor) {
+        if (editor && editor.document.uri.scheme === 'file') {
+            this.activeUris.add(editor.document.uri.toString());
             this.applyDecorations(editor);
         }
     }
 
     deactivate(): void {
-        this.isActive = false;
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+            this.activeUris.delete(editor.document.uri.toString());
+        }
         this.clearDecorations();
     }
 
+    isActiveForEditor(editor: vscode.TextEditor): boolean {
+        return this.activeUris.has(editor.document.uri.toString());
+    }
+
+    hasActiveEditors(): boolean {
+        return this.activeUris.size > 0;
+    }
+
     onEditorChanged(editor: vscode.TextEditor): void {
-        if (this.isActive) {
+        this.clearDecorations();
+        if (this.activeUris.has(editor.document.uri.toString())) {
             this.applyDecorations(editor);
         }
     }
 
     refresh(): void {
-        if (this.isActive) {
-            const editor = vscode.window.activeTextEditor;
-            if (editor) {
-                this.clearDecorations();
-                this.applyDecorations(editor);
-            }
+        const editor = vscode.window.activeTextEditor;
+        if (editor && this.activeUris.has(editor.document.uri.toString())) {
+            this.clearDecorations();
+            this.applyDecorations(editor);
         }
     }
 
@@ -103,18 +116,21 @@ export class BlameDecorationProvider implements vscode.Disposable {
             // Build the gutter text from the first line of this commit group
             const sampleInfo = infos[0];
             const gutterText = this.buildGutterText(sampleInfo, showAuthor, showDate, showCommitId, dateFormat);
+            const gutterWidth = Math.max(
+                gutterText.length * BlameDecorationProvider.GUTTER_CHAR_WIDTH_EM,
+                BlameDecorationProvider.GUTTER_MIN_WIDTH_EM
+            );
 
             const decorationType = vscode.window.createTextEditorDecorationType({
                 backgroundColor,
                 isWholeLine: true,
-                before: {
+                before: gutterText.length > 0 ? {
                     contentText: gutterText,
                     color: new vscode.ThemeColor('editorLineNumber.foreground'),
-                    margin: '0 1em 0 0',
                     fontStyle: 'italic',
-                    width: gutterText.length > 0 ? `${Math.max(gutterText.length * 0.6, 8)}em` : undefined,
-                    textDecoration: 'none; font-size: 0.85em'
-                },
+                    width: '0',
+                    textDecoration: `none; font-size: 0.85em; white-space: nowrap; position: relative; left: -${gutterWidth}em; display: inline-block; min-width: ${gutterWidth}em; text-align: right;`
+                } : undefined,
                 overviewRulerColor: backgroundColor,
                 overviewRulerLane: vscode.OverviewRulerLane.Left
             });

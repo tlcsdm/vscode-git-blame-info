@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { BlameProvider, BlameInfo } from './blameProvider';
 
 export class BlameDecorationProvider implements vscode.Disposable {
+    private static readonly GUTTER_CHAR_WIDTH_EM = 0.55;
+    private static readonly GUTTER_MIN_WIDTH_EM = 8;
     private activeUris = new Set<string>();
     private decorationTypes: vscode.TextEditorDecorationType[] = [];
     private readonly commitColors: string[] = [
@@ -114,6 +116,10 @@ export class BlameDecorationProvider implements vscode.Disposable {
             // Build the gutter text from the first line of this commit group
             const sampleInfo = infos[0];
             const gutterText = this.buildGutterText(sampleInfo, showAuthor, showDate, showCommitId, dateFormat);
+            const gutterWidth = Math.max(
+                gutterText.length * BlameDecorationProvider.GUTTER_CHAR_WIDTH_EM,
+                BlameDecorationProvider.GUTTER_MIN_WIDTH_EM
+            );
 
             const decorationType = vscode.window.createTextEditorDecorationType({
                 backgroundColor,
@@ -123,7 +129,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
                     color: new vscode.ThemeColor('editorLineNumber.foreground'),
                     fontStyle: 'italic',
                     width: '0',
-                    textDecoration: `none; font-size: 0.85em; white-space: nowrap; position: relative; left: -${Math.max(gutterText.length * 0.55, 8)}em; display: inline-block; width: ${Math.max(gutterText.length * 0.55, 8)}em; text-align: right;`
+                    textDecoration: `none; font-size: 0.85em; white-space: nowrap; position: relative; left: -${gutterWidth}em; display: inline-block; min-width: ${gutterWidth}em; text-align: right;`
                 } : undefined,
                 overviewRulerColor: backgroundColor,
                 overviewRulerLane: vscode.OverviewRulerLane.Left

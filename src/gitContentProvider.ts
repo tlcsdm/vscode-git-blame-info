@@ -4,7 +4,12 @@ import * as path from 'path';
 
 export class GitContentProvider implements vscode.TextDocumentContentProvider {
     provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-        const params = JSON.parse(uri.query);
+        let params: { commit: string; path: string };
+        try {
+            params = JSON.parse(uri.query);
+        } catch {
+            return Promise.resolve('');
+        }
         const commit: string = params.commit;
         const filePath: string = params.path;
         const cwd = path.dirname(filePath);

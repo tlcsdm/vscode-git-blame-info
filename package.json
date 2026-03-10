@@ -2,7 +2,7 @@
   "name": "vscode-git-blame-info",
   "displayName": "Git Blame Info",
   "description": "Display git blame information in the editor gutter with color-coded annotations, inspired by Eclipse EGit",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "publisher": "unknowIfGuestInDream",
   "icon": "images/icon.png",
   "license": "MIT",
@@ -14,8 +14,7 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other",
-    "Visualization"
+    "SCM Providers"
   ],
   "keywords": [
     "git",

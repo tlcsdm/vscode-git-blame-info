@@ -1,10 +1,14 @@
 import * as vscode from 'vscode';
 import { BlameProvider } from './blameProvider';
+import { BlameDecorationProvider } from './blameDecorationProvider';
 
 export class BlameHoverProvider implements vscode.HoverProvider {
     private _isActive = false;
 
-    constructor(private blameProvider: BlameProvider) {}
+    constructor(
+        private blameProvider: BlameProvider,
+        private blameDecorationProvider: BlameDecorationProvider
+    ) {}
 
     set isActive(value: boolean) {
         this._isActive = value;
@@ -15,6 +19,11 @@ export class BlameHoverProvider implements vscode.HoverProvider {
         position: vscode.Position
     ): Promise<vscode.Hover | undefined> {
         if (!this._isActive) {
+            return undefined;
+        }
+
+        const editor = vscode.window.activeTextEditor;
+        if (!editor || !this.blameDecorationProvider.isActiveForEditor(editor)) {
             return undefined;
         }
 

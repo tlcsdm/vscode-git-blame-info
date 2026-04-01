@@ -22,13 +22,13 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
         vscode.workspace.registerTextDocumentContentProvider('git-blame-info', gitContentProvider),
 
-        vscode.commands.registerCommand('gitBlameInfo.showRevisionInformation', () => {
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.showRevisionInformation', () => {
             blameDecorationProvider.activate();
             blameHoverProvider.isActive = true;
             updateContextForActiveEditor();
         }),
 
-        vscode.commands.registerCommand('gitBlameInfo.hideRevisionInformation', () => {
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.hideRevisionInformation', () => {
             blameDecorationProvider.deactivate();
             updateContextForActiveEditor();
             if (!blameDecorationProvider.hasActiveEditors()) {
@@ -36,36 +36,36 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }),
 
-        vscode.commands.registerCommand('gitBlameInfo.toggleAuthor', () => {
-            const config = vscode.workspace.getConfiguration('gitBlameInfo');
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleAuthor', () => {
+            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
             const current = config.get<boolean>('showAuthor', true);
             config.update('showAuthor', !current, vscode.ConfigurationTarget.Global);
         }),
 
-        vscode.commands.registerCommand('gitBlameInfo.toggleDate', () => {
-            const config = vscode.workspace.getConfiguration('gitBlameInfo');
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleDate', () => {
+            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
             const current = config.get<boolean>('showDate', true);
             config.update('showDate', !current, vscode.ConfigurationTarget.Global);
         }),
 
-        vscode.commands.registerCommand('gitBlameInfo.toggleCommitId', () => {
-            const config = vscode.workspace.getConfiguration('gitBlameInfo');
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleCommitId', () => {
+            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
             const current = config.get<boolean>('showCommitId', false);
             config.update('showCommitId', !current, vscode.ConfigurationTarget.Global);
         }),
 
-        vscode.commands.registerCommand('gitBlameInfo.openCommit', (fileUriStr: string, commitHash: string) => {
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openCommit', (fileUriStr: string, commitHash: string) => {
             openCommitDiff(fileUriStr, commitHash);
         }),
 
-        vscode.commands.registerCommand('gitBlameInfo.openHistory', () => {
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openHistory', () => {
             vscode.commands.executeCommand('timeline.focus');
         }),
 
         vscode.languages.registerHoverProvider({ scheme: 'file' }, blameHoverProvider),
 
         vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('gitBlameInfo')) {
+            if (e.affectsConfiguration('tlcsdm-gitBlameInfo')) {
                 blameDecorationProvider.refresh();
             }
         }),
@@ -91,7 +91,7 @@ export function activate(context: vscode.ExtensionContext): void {
 function updateContextForActiveEditor(): void {
     const editor = vscode.window.activeTextEditor;
     const isActive = editor ? blameDecorationProvider.isActiveForEditor(editor) : false;
-    vscode.commands.executeCommand('setContext', 'gitBlameInfo.isActive', isActive);
+    vscode.commands.executeCommand('setContext', 'tlcsdm-gitBlameInfo.isActive', isActive);
 }
 
 function openCommitDiff(fileUriStr: string, commitHash: string): void {

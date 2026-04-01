@@ -54,13 +54,13 @@ export class BlameHoverProvider implements vscode.HoverProvider {
         // Open Commit - uses our registered command to show the commit diff
         const openCommitArgs = encodeURIComponent(JSON.stringify([document.uri.toString(), blameInfo.commit]));
         markdown.appendMarkdown(
-            `[$(git-commit) Open Commit](command:gitBlameInfo.openCommit?${openCommitArgs} "View this commit")`
+            `[$(git-commit) Open Commit](command:tlcsdm-gitBlameInfo.openCommit?${openCommitArgs} "View this commit")`
         );
         markdown.appendMarkdown('&nbsp;&nbsp;&nbsp;');
 
         // Open History - focuses the built-in timeline view
         markdown.appendMarkdown(
-            `[$(history) Open History](command:gitBlameInfo.openHistory "View file history")`
+            `[$(history) Open History](command:tlcsdm-gitBlameInfo.openHistory "View file history")`
         );
 
         return new vscode.Hover(markdown, new vscode.Range(position.line, 0, position.line, 0));

@@ -86,7 +86,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
             return;
         }
 
-        const config = vscode.workspace.getConfiguration('gitBlameInfo');
+        const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
         const showAuthor = config.get<boolean>('showAuthor', true);
         const showDate = config.get<boolean>('showDate', true);
         const showCommitId = config.get<boolean>('showCommitId', false);

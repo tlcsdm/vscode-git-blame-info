@@ -31,10 +31,10 @@ When revision information is active, a **Revisions** submenu appears in the edit
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `gitBlameInfo.showAuthor` | `true` | Show author name in gutter |
-| `gitBlameInfo.showDate` | `true` | Show commit date in gutter |
-| `gitBlameInfo.showCommitId` | `false` | Show abbreviated commit ID in gutter |
-| `gitBlameInfo.dateFormat` | `YYYY-MM-DD` | Date format for gutter annotation |
+| `tlcsdm-gitBlameInfo.showAuthor` | `true` | Show author name in gutter |
+| `tlcsdm-gitBlameInfo.showDate` | `true` | Show commit date in gutter |
+| `tlcsdm-gitBlameInfo.showCommitId` | `false` | Show abbreviated commit ID in gutter |
+| `tlcsdm-gitBlameInfo.dateFormat` | `YYYY-MM-DD` | Date format for gutter annotation |
 
 ## Installation
 

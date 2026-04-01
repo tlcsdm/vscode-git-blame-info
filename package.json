@@ -1,5 +1,5 @@
 {
-  "name": "vscode-git-blame-info",
+  "name": "tlcsdm-vscode-git-blame-info",
   "displayName": "Git Blame Info",
   "description": "Display git blame information in the editor gutter with color-coded annotations, inspired by Eclipse EGit",
   "version": "1.0.0",
@@ -28,37 +28,37 @@
   "contributes": {
     "commands": [
       {
-        "command": "gitBlameInfo.showRevisionInformation",
+        "command": "tlcsdm-gitBlameInfo.showRevisionInformation",
         "title": "Show Revision Information",
         "category": "Git Blame Info"
       },
       {
-        "command": "gitBlameInfo.hideRevisionInformation",
+        "command": "tlcsdm-gitBlameInfo.hideRevisionInformation",
         "title": "Hide Revision Information",
         "category": "Git Blame Info"
       },
       {
-        "command": "gitBlameInfo.toggleAuthor",
+        "command": "tlcsdm-gitBlameInfo.toggleAuthor",
         "title": "Toggle Author",
         "category": "Git Blame Info: Revisions"
       },
       {
-        "command": "gitBlameInfo.toggleDate",
+        "command": "tlcsdm-gitBlameInfo.toggleDate",
         "title": "Toggle Date",
         "category": "Git Blame Info: Revisions"
       },
       {
-        "command": "gitBlameInfo.toggleCommitId",
+        "command": "tlcsdm-gitBlameInfo.toggleCommitId",
         "title": "Toggle Commit ID",
         "category": "Git Blame Info: Revisions"
       },
       {
-        "command": "gitBlameInfo.openCommit",
+        "command": "tlcsdm-gitBlameInfo.openCommit",
         "title": "Open Commit",
         "category": "Git Blame Info"
       },
       {
-        "command": "gitBlameInfo.openHistory",
+        "command": "tlcsdm-gitBlameInfo.openHistory",
         "title": "Open History",
         "category": "Git Blame Info"
       }
@@ -66,63 +66,63 @@
     "menus": {
       "editor/lineNumber/context": [
         {
-          "command": "gitBlameInfo.showRevisionInformation",
-          "when": "!gitBlameInfo.isActive",
+          "command": "tlcsdm-gitBlameInfo.showRevisionInformation",
+          "when": "!tlcsdm-gitBlameInfo.isActive",
           "group": "1_modification"
         },
         {
-          "command": "gitBlameInfo.hideRevisionInformation",
-          "when": "gitBlameInfo.isActive",
+          "command": "tlcsdm-gitBlameInfo.hideRevisionInformation",
+          "when": "tlcsdm-gitBlameInfo.isActive",
           "group": "1_modification"
         }
       ],
       "editor/title": [
         {
-          "submenu": "gitBlameInfo.revisions",
-          "when": "gitBlameInfo.isActive",
+          "submenu": "tlcsdm-gitBlameInfo.revisions",
+          "when": "tlcsdm-gitBlameInfo.isActive",
           "group": "navigation"
         }
       ],
-      "gitBlameInfo.revisions": [
+      "tlcsdm-gitBlameInfo.revisions": [
         {
-          "command": "gitBlameInfo.toggleAuthor",
+          "command": "tlcsdm-gitBlameInfo.toggleAuthor",
           "group": "1_display"
         },
         {
-          "command": "gitBlameInfo.toggleDate",
+          "command": "tlcsdm-gitBlameInfo.toggleDate",
           "group": "1_display"
         },
         {
-          "command": "gitBlameInfo.toggleCommitId",
+          "command": "tlcsdm-gitBlameInfo.toggleCommitId",
           "group": "1_display"
         }
       ]
     },
     "submenus": [
       {
-        "id": "gitBlameInfo.revisions",
+        "id": "tlcsdm-gitBlameInfo.revisions",
         "label": "Revisions"
       }
     ],
     "configuration": {
       "title": "Git Blame Info",
       "properties": {
-        "gitBlameInfo.showAuthor": {
+        "tlcsdm-gitBlameInfo.showAuthor": {
           "type": "boolean",
           "default": true,
           "description": "Show author name in the gutter annotation"
         },
-        "gitBlameInfo.showDate": {
+        "tlcsdm-gitBlameInfo.showDate": {
           "type": "boolean",
           "default": true,
           "description": "Show commit date in the gutter annotation"
         },
-        "gitBlameInfo.showCommitId": {
+        "tlcsdm-gitBlameInfo.showCommitId": {
           "type": "boolean",
           "default": false,
           "description": "Show abbreviated commit ID in the gutter annotation"
         },
-        "gitBlameInfo.dateFormat": {
+        "tlcsdm-gitBlameInfo.dateFormat": {
           "type": "string",
           "default": "YYYY-MM-DD",
           "description": "Date format for the gutter annotation"

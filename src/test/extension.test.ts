@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 
 suite('Extension Test Suite', () => {
-    const extensionId = 'unknowIfGuestInDream.vscode-git-blame-info';
+    const extensionId = 'unknowIfGuestInDream.tlcsdm-vscode-git-blame-info';
 
     suiteSetup(async () => {
         const extension = vscode.extensions.getExtension(extensionId);
@@ -18,17 +18,17 @@ suite('Extension Test Suite', () => {
 
     test('Commands should be registered', async () => {
         const commands = await vscode.commands.getCommands(true);
-        assert.ok(commands.includes('gitBlameInfo.showRevisionInformation'));
-        assert.ok(commands.includes('gitBlameInfo.hideRevisionInformation'));
-        assert.ok(commands.includes('gitBlameInfo.toggleAuthor'));
-        assert.ok(commands.includes('gitBlameInfo.toggleDate'));
-        assert.ok(commands.includes('gitBlameInfo.toggleCommitId'));
-        assert.ok(commands.includes('gitBlameInfo.openCommit'));
-        assert.ok(commands.includes('gitBlameInfo.openHistory'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.showRevisionInformation'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.hideRevisionInformation'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleAuthor'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleDate'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleCommitId'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.openCommit'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.openHistory'));
     });
 
     test('Configuration defaults should be correct', () => {
-        const config = vscode.workspace.getConfiguration('gitBlameInfo');
+        const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
         assert.strictEqual(config.get('showAuthor'), true);
         assert.strictEqual(config.get('showDate'), true);
         assert.strictEqual(config.get('showCommitId'), false);

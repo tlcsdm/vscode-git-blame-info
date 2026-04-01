@@ -53,6 +53,16 @@
         "category": "Git Blame Info: Revisions"
       },
       {
+        "command": "tlcsdm-gitBlameInfo.toggleSummary",
+        "title": "Toggle Summary",
+        "category": "Git Blame Info: Revisions"
+      },
+      {
+        "command": "tlcsdm-gitBlameInfo.toggleRelativeDate",
+        "title": "Toggle Relative Date",
+        "category": "Git Blame Info: Revisions"
+      },
+      {
         "command": "tlcsdm-gitBlameInfo.openCommit",
         "title": "Open Commit",
         "category": "Git Blame Info"
@@ -95,6 +105,14 @@
         {
           "command": "tlcsdm-gitBlameInfo.toggleCommitId",
           "group": "1_display"
+        },
+        {
+          "command": "tlcsdm-gitBlameInfo.toggleSummary",
+          "group": "1_display"
+        },
+        {
+          "command": "tlcsdm-gitBlameInfo.toggleRelativeDate",
+          "group": "2_format"
         }
       ]
     },
@@ -121,6 +139,16 @@
           "type": "boolean",
           "default": false,
           "description": "Show abbreviated commit ID in the gutter annotation"
+        },
+        "tlcsdm-gitBlameInfo.showSummary": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show commit summary (message) in the gutter annotation"
+        },
+        "tlcsdm-gitBlameInfo.useRelativeDate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show relative dates (e.g. '2 months ago') instead of formatted dates in the gutter annotation"
         },
         "tlcsdm-gitBlameInfo.dateFormat": {
           "type": "string",

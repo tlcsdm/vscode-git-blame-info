@@ -90,6 +90,8 @@ export class BlameDecorationProvider implements vscode.Disposable {
         const showAuthor = config.get<boolean>('showAuthor', true);
         const showDate = config.get<boolean>('showDate', true);
         const showCommitId = config.get<boolean>('showCommitId', false);
+        const showSummary = config.get<boolean>('showSummary', true);
+        const useRelativeDate = config.get<boolean>('useRelativeDate', false);
         const dateFormat = config.get<string>('dateFormat', 'YYYY-MM-DD');
 
         // Group lines by commit and assign colors
@@ -115,7 +117,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
 
             // Build the gutter text from the first line of this commit group
             const sampleInfo = infos[0];
-            const gutterText = this.buildGutterText(sampleInfo, showAuthor, showDate, showCommitId, dateFormat);
+            const gutterText = this.buildGutterText(sampleInfo, showAuthor, showDate, showCommitId, showSummary, useRelativeDate, dateFormat);
             const gutterWidth = Math.max(
                 gutterText.length * BlameDecorationProvider.GUTTER_CHAR_WIDTH_EM,
                 BlameDecorationProvider.GUTTER_MIN_WIDTH_EM
@@ -149,6 +151,8 @@ export class BlameDecorationProvider implements vscode.Disposable {
         showAuthor: boolean,
         showDate: boolean,
         showCommitId: boolean,
+        showSummary: boolean,
+        useRelativeDate: boolean,
         dateFormat: string
     ): string {
         const parts: string[] = [];
@@ -161,15 +165,57 @@ export class BlameDecorationProvider implements vscode.Disposable {
             parts.push(info.commit.substring(0, 7));
         }
 
+        if (showSummary) {
+            const maxLen = 50;
+            const summary = info.summary.length > maxLen
+                ? info.summary.substring(0, maxLen) + '…'
+                : info.summary;
+            parts.push(summary);
+        }
+
         if (showAuthor) {
             parts.push(info.author);
         }
 
         if (showDate) {
-            parts.push(this.formatDate(info.authorTime, dateFormat));
+            if (useRelativeDate) {
+                parts.push(this.getRelativeDate(info.authorTime));
+            } else {
+                parts.push(this.formatDate(info.authorTime, dateFormat));
+            }
         }
 
         return parts.join(' · ');
+    }
+
+    private getRelativeDate(timestamp: number): string {
+        const now = new Date();
+        const date = new Date(timestamp * 1000);
+        const diffMs = now.getTime() - date.getTime();
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHour = Math.floor(diffMin / 60);
+        const diffDay = Math.floor(diffHour / 24);
+        const diffWeek = Math.floor(diffDay / 7);
+
+        const diffYear = now.getFullYear() - date.getFullYear();
+        const diffMonth = diffYear * 12 + (now.getMonth() - date.getMonth());
+
+        if (diffSec < 60) {
+            return 'just now';
+        } else if (diffMin < 60) {
+            return diffMin === 1 ? '1 minute ago' : `${diffMin} minutes ago`;
+        } else if (diffHour < 24) {
+            return diffHour === 1 ? '1 hour ago' : `${diffHour} hours ago`;
+        } else if (diffDay < 7) {
+            return diffDay === 1 ? 'yesterday' : `${diffDay} days ago`;
+        } else if (diffMonth < 1) {
+            return diffWeek === 1 ? '1 week ago' : `${diffWeek} weeks ago`;
+        } else if (diffMonth < 12) {
+            return diffMonth === 1 ? '1 month ago' : `${diffMonth} months ago`;
+        } else {
+            return diffYear === 1 ? '1 year ago' : `${diffYear} years ago`;
+        }
     }
 
     private formatDate(timestamp: number, format: string): string {

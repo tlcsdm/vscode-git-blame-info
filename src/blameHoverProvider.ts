@@ -62,6 +62,12 @@ export class BlameHoverProvider implements vscode.HoverProvider {
         markdown.appendMarkdown(
             `[$(history) Open History](command:tlcsdm-gitBlameInfo.openHistory "View file history")`
         );
+        markdown.appendMarkdown('&nbsp;&nbsp;&nbsp;');
+
+        // Open Settings - opens extension settings
+        markdown.appendMarkdown(
+            `[$(gear) Settings](command:tlcsdm-gitBlameInfo.openSettings "Open extension settings")`
+        );
 
         return new vscode.Hover(markdown, new vscode.Range(position.line, 0, position.line, 0));
     }

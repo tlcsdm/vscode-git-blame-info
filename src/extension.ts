@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext): void {
     blameProvider = new BlameProvider();
     blameDecorationProvider = new BlameDecorationProvider(blameProvider);
     blameHoverProvider = new BlameHoverProvider(blameProvider, blameDecorationProvider);
-    outputChannel = vscode.window.createOutputChannel('Git Blame Info');
+    outputChannel = vscode.window.createOutputChannel('Tlcsdm Git Blame Info');
 
     const gitContentProvider = new GitContentProvider();
 
@@ -36,42 +36,16 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }),
 
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleAuthor', () => {
-            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
-            const current = config.get<boolean>('showAuthor', true);
-            config.update('showAuthor', !current, vscode.ConfigurationTarget.Global);
-        }),
-
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleDate', () => {
-            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
-            const current = config.get<boolean>('showDate', true);
-            config.update('showDate', !current, vscode.ConfigurationTarget.Global);
-        }),
-
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleCommitId', () => {
-            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
-            const current = config.get<boolean>('showCommitId', false);
-            config.update('showCommitId', !current, vscode.ConfigurationTarget.Global);
-        }),
-
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleSummary', () => {
-            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
-            const current = config.get<boolean>('showSummary', true);
-            config.update('showSummary', !current, vscode.ConfigurationTarget.Global);
-        }),
-
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleRelativeDate', () => {
-            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
-            const current = config.get<boolean>('useRelativeDate', false);
-            config.update('useRelativeDate', !current, vscode.ConfigurationTarget.Global);
-        }),
-
         vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openCommit', (fileUriStr: string, commitHash: string) => {
             openCommitDiff(fileUriStr, commitHash);
         }),
 
         vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openHistory', () => {
             vscode.commands.executeCommand('timeline.focus');
+        }),
+
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openSettings', () => {
+            vscode.commands.executeCommand('workbench.action.openSettings', 'tlcsdm-gitBlameInfo');
         }),
 
         vscode.languages.registerHoverProvider({ scheme: 'file' }, blameHoverProvider),

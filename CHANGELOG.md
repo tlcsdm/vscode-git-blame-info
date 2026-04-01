@@ -2,14 +2,13 @@
 
 All notable changes to the "vscode-git-blame-info" extension will be documented in this file.
 
-## [0.0.1] - 2026-03-08
+## [1.0.0] - 2026-04-01
 
-### Added
+### Changed
 
-- Initial release
-- Show Revision Information command in editor line number context menu
-- Color-coded git blame annotations in the editor gutter
-- Configurable display options: author, date, commit ID
-- Hover popup with commit details (summary, author, date, commit hash)
-- Open Commit and Open History actions in hover popup
-- Revisions submenu in editor title bar for toggling display options
+- Add "Tlcsdm" prefix to command categories and configuration title to distinguish from other Git Blame extensions
+- Replace Revisions submenu with a Settings button in hover popup for direct access to extension settings
+- Remove toggle commands (Toggle Author, Toggle Date, Toggle Commit ID, Toggle Summary, Toggle Relative Date) in favor of the Settings page
+- Add Open Settings command to open extension configuration
+- Hover popup now includes Open Commit, Open History, and Settings buttons
+- Update changelog to version 1.0.0

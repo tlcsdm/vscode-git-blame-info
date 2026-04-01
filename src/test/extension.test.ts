@@ -23,6 +23,8 @@ suite('Extension Test Suite', () => {
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleAuthor'));
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleDate'));
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleCommitId'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleSummary'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleRelativeDate'));
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.openCommit'));
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.openHistory'));
     });
@@ -32,6 +34,8 @@ suite('Extension Test Suite', () => {
         assert.strictEqual(config.get('showAuthor'), true);
         assert.strictEqual(config.get('showDate'), true);
         assert.strictEqual(config.get('showCommitId'), false);
+        assert.strictEqual(config.get('showSummary'), true);
+        assert.strictEqual(config.get('useRelativeDate'), false);
         assert.strictEqual(config.get('dateFormat'), 'YYYY-MM-DD');
     });
 });

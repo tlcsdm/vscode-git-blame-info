@@ -54,6 +54,18 @@ export function activate(context: vscode.ExtensionContext): void {
             config.update('showCommitId', !current, vscode.ConfigurationTarget.Global);
         }),
 
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleSummary', () => {
+            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
+            const current = config.get<boolean>('showSummary', true);
+            config.update('showSummary', !current, vscode.ConfigurationTarget.Global);
+        }),
+
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleRelativeDate', () => {
+            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
+            const current = config.get<boolean>('useRelativeDate', false);
+            config.update('useRelativeDate', !current, vscode.ConfigurationTarget.Global);
+        }),
+
         vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openCommit', (fileUriStr: string, commitHash: string) => {
             openCommitDiff(fileUriStr, commitHash);
         }),

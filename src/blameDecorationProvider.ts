@@ -256,18 +256,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
             return 'Uncommitted';
         }
 
-        if (showCommitId) {
-            parts.push(info.commit.substring(0, 7));
-        }
-
-        if (showSummary) {
-            const maxLen = 50;
-            const summary = info.summary.length > maxLen
-                ? info.summary.substring(0, maxLen) + '…'
-                : info.summary;
-            parts.push(summary);
-        }
-
+        // Author and date first, then commit ID and summary
         if (showAuthor) {
             parts.push(info.author);
         }
@@ -278,6 +267,14 @@ export class BlameDecorationProvider implements vscode.Disposable {
             } else {
                 parts.push(this.formatDate(info.authorTime, dateFormat));
             }
+        }
+
+        if (showCommitId) {
+            parts.push(info.commit.substring(0, 7));
+        }
+
+        if (showSummary) {
+            parts.push(info.summary);
         }
 
         return parts.join(' · ');

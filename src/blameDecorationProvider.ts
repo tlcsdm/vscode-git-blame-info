@@ -95,7 +95,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
         const dateFormat = config.get<string>('dateFormat', 'YYYY-MM-DD');
         const columnWidth = config.get<number>('columnWidth', BlameDecorationProvider.DEFAULT_COLUMN_WIDTH);
 
-        // Group lines by commit and assign colors
+        // Assign colors to commits
         const commitColorMap = new Map<string, string>();
         let colorIndex = 0;
         for (const info of blameInfo) {
@@ -105,44 +105,50 @@ export class BlameDecorationProvider implements vscode.Disposable {
             }
         }
 
-        // Group blame info by commit for batch decoration
-        const commitGroups = new Map<string, BlameInfo[]>();
+        // Build line -> blame info map (0-indexed)
+        const blameMap = new Map<number, BlameInfo>();
         for (const info of blameInfo) {
-            const group = commitGroups.get(info.commit) || [];
-            group.push(info);
-            commitGroups.set(info.commit, group);
+            blameMap.set(info.lineNumber - 1, info);
         }
 
-        for (const [commit, infos] of commitGroups) {
-            const backgroundColor = commitColorMap.get(commit) || this.commitColors[0];
+        // Single decoration type for the column layout — per-line renderOptions
+        // provide individual blame text and background colors
+        const columnDecorationType = vscode.window.createTextEditorDecorationType({
+            isWholeLine: true,
+        });
 
-            // Build the gutter text from the first line of this commit group
-            const sampleInfo = infos[0];
-            const gutterText = this.buildGutterText(sampleInfo, showAuthor, showDate, showCommitId, showSummary, useRelativeDate, dateFormat);
+        const columnStyle = `none; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85em; border-right: 2px solid rgba(128, 128, 128, 0.3); padding-right: 0.5em;`;
 
-            const decorationType = vscode.window.createTextEditorDecorationType({
-                backgroundColor,
-                isWholeLine: true,
-                before: gutterText.length > 0 ? {
-                    contentText: gutterText,
-                    color: new vscode.ThemeColor('editorLineNumber.foreground'),
-                    backgroundColor,
-                    fontStyle: 'italic',
-                    width: `${columnWidth}ch`,
-                    margin: BlameDecorationProvider.COLUMN_MARGIN,
-                    textDecoration: 'none; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85em; border-right: 2px solid rgba(128, 128, 128, 0.3); padding-right: 0.5em;'
-                } : undefined,
-                overviewRulerColor: backgroundColor,
-                overviewRulerLane: vscode.OverviewRulerLane.Left
+        const decorations: vscode.DecorationOptions[] = [];
+        const totalLines = editor.document.lineCount;
+
+        for (let line = 0; line < totalLines; line++) {
+            const info = blameMap.get(line);
+            const gutterText = info
+                ? this.buildGutterText(info, showAuthor, showDate, showCommitId, showSummary, useRelativeDate, dateFormat)
+                : '';
+            const bgColor = info
+                ? (commitColorMap.get(info.commit) || this.commitColors[0])
+                : 'transparent';
+
+            decorations.push({
+                range: new vscode.Range(line, 0, line, 0),
+                renderOptions: {
+                    before: {
+                        contentText: gutterText || ' ',
+                        color: new vscode.ThemeColor('editorLineNumber.foreground'),
+                        backgroundColor: bgColor,
+                        fontStyle: 'italic',
+                        width: `${columnWidth}ch`,
+                        margin: BlameDecorationProvider.COLUMN_MARGIN,
+                        textDecoration: columnStyle,
+                    },
+                },
             });
-
-            const ranges: vscode.DecorationOptions[] = infos.map(info => ({
-                range: new vscode.Range(info.lineNumber - 1, 0, info.lineNumber - 1, 0)
-            }));
-
-            editor.setDecorations(decorationType, ranges);
-            this.decorationTypes.push(decorationType);
         }
+
+        editor.setDecorations(columnDecorationType, decorations);
+        this.decorationTypes.push(columnDecorationType);
     }
 
     private buildGutterText(

@@ -118,6 +118,9 @@ export class BlameDecorationProvider implements vscode.Disposable {
         }
 
         const columnStyle = `none; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85em; border-right: 2px solid rgba(128, 128, 128, 0.3); padding-right: 0.5em;`;
+        const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark ||
+            vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrast;
+        const gutterTextColor = isDark ? '#d4d4d4' : '#333333';
         const totalLines = editor.document.lineCount;
 
         // Determine first line of each contiguous commit group (only these show text)
@@ -164,20 +167,10 @@ export class BlameDecorationProvider implements vscode.Disposable {
             const decorations: vscode.DecorationOptions[] = lines.map(({ line, gutterText }) => ({
                 range: new vscode.Range(line, 0, line, 0),
                 renderOptions: {
-                    light: {
-                        before: {
-                            color: '#333333',
-                            backgroundColor: colorPair.light,
-                        },
-                    },
-                    dark: {
-                        before: {
-                            color: '#d4d4d4',
-                            backgroundColor: colorPair.dark,
-                        },
-                    },
                     before: {
                         contentText: gutterText || '\u00a0',
+                        color: gutterTextColor,
+                        backgroundColor: isDark ? colorPair.dark : colorPair.light,
                         fontStyle: 'italic',
                         width: `${columnWidth}ch`,
                         margin: BlameDecorationProvider.COLUMN_MARGIN,

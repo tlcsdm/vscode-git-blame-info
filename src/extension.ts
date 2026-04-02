@@ -76,6 +76,10 @@ export function activate(context: vscode.ExtensionContext): void {
             blameDecorationProvider.refresh();
         }),
 
+        vscode.window.onDidChangeActiveColorTheme(() => {
+            blameDecorationProvider.refresh();
+        }),
+
         blameProvider,
         blameDecorationProvider,
         outputChannel

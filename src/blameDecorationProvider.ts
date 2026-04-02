@@ -6,6 +6,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
     private static readonly COLUMN_MARGIN = '0 1.5em 0 0';
     private activeUris = new Set<string>();
     private decorationTypes: vscode.TextEditorDecorationType[] = [];
+    private savedWordWrap: { value: string; target: vscode.ConfigurationTarget } | undefined;
     private readonly commitColors: string[] = [
         'rgba(255, 235, 59, 0.15)',
         'rgba(129, 199, 132, 0.15)',
@@ -26,6 +27,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
     dispose(): void {
         this.clearDecorations();
         this.activeUris.clear();
+        this.restoreWordWrap();
     }
 
     activate(): void {
@@ -33,6 +35,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
         if (editor && editor.document.uri.scheme === 'file') {
             this.activeUris.add(editor.document.uri.toString());
             this.applyDecorations(editor);
+            this.disableWordWrap();
         }
     }
 
@@ -42,6 +45,9 @@ export class BlameDecorationProvider implements vscode.Disposable {
             this.activeUris.delete(editor.document.uri.toString());
         }
         this.clearDecorations();
+        if (!this.hasActiveEditors()) {
+            this.restoreWordWrap();
+        }
     }
 
     isActiveForEditor(editor: vscode.TextEditor): boolean {
@@ -111,27 +117,35 @@ export class BlameDecorationProvider implements vscode.Disposable {
             blameMap.set(info.lineNumber - 1, info);
         }
 
-        // Single decoration type for the column layout — per-line renderOptions
-        // provide individual blame text and background colors
-        const columnDecorationType = vscode.window.createTextEditorDecorationType({
-            isWholeLine: true,
-        });
-
         const columnStyle = `none; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85em; border-right: 2px solid rgba(128, 128, 128, 0.3); padding-right: 0.5em;`;
-
-        const decorations: vscode.DecorationOptions[] = [];
         const totalLines = editor.document.lineCount;
+
+        // Group lines by background color for whole-line coloring
+        const colorGroups = new Map<string, { line: number; gutterText: string }[]>();
+        const noBlameLines: number[] = [];
 
         for (let line = 0; line < totalLines; line++) {
             const info = blameMap.get(line);
-            const gutterText = info
-                ? this.buildGutterText(info, showAuthor, showDate, showCommitId, showSummary, useRelativeDate, dateFormat)
-                : '';
-            const bgColor = info
-                ? (commitColorMap.get(info.commit) || this.commitColors[0])
-                : 'transparent';
+            if (info) {
+                const bgColor = commitColorMap.get(info.commit) || this.commitColors[0];
+                const gutterText = this.buildGutterText(info, showAuthor, showDate, showCommitId, showSummary, useRelativeDate, dateFormat);
+                if (!colorGroups.has(bgColor)) {
+                    colorGroups.set(bgColor, []);
+                }
+                colorGroups.get(bgColor)!.push({ line, gutterText });
+            } else {
+                noBlameLines.push(line);
+            }
+        }
 
-            decorations.push({
+        // Create a decoration type per color group with whole-line background
+        for (const [bgColor, lines] of colorGroups) {
+            const decorationType = vscode.window.createTextEditorDecorationType({
+                isWholeLine: true,
+                backgroundColor: bgColor,
+            });
+
+            const decorations: vscode.DecorationOptions[] = lines.map(({ line, gutterText }) => ({
                 range: new vscode.Range(line, 0, line, 0),
                 renderOptions: {
                     before: {
@@ -144,11 +158,61 @@ export class BlameDecorationProvider implements vscode.Disposable {
                         textDecoration: columnStyle,
                     },
                 },
-            });
+            }));
+
+            editor.setDecorations(decorationType, decorations);
+            this.decorationTypes.push(decorationType);
         }
 
-        editor.setDecorations(columnDecorationType, decorations);
-        this.decorationTypes.push(columnDecorationType);
+        // Spacer decoration for lines without blame info
+        if (noBlameLines.length > 0) {
+            const spacerType = vscode.window.createTextEditorDecorationType({
+                isWholeLine: true,
+            });
+
+            const spacerDecorations: vscode.DecorationOptions[] = noBlameLines.map(line => ({
+                range: new vscode.Range(line, 0, line, 0),
+                renderOptions: {
+                    before: {
+                        contentText: ' ',
+                        width: `${columnWidth}ch`,
+                        margin: BlameDecorationProvider.COLUMN_MARGIN,
+                        textDecoration: columnStyle,
+                    },
+                },
+            }));
+
+            editor.setDecorations(spacerType, spacerDecorations);
+            this.decorationTypes.push(spacerType);
+        }
+    }
+
+    private disableWordWrap(): void {
+        const config = vscode.workspace.getConfiguration('editor');
+        const effectiveValue = config.get<string>('wordWrap');
+
+        if (effectiveValue && effectiveValue !== 'off' && this.savedWordWrap === undefined) {
+            const inspect = config.inspect<string>('wordWrap');
+            let target: vscode.ConfigurationTarget;
+            if (inspect?.workspaceFolderValue !== undefined) {
+                target = vscode.ConfigurationTarget.WorkspaceFolder;
+            } else if (inspect?.workspaceValue !== undefined) {
+                target = vscode.ConfigurationTarget.Workspace;
+            } else {
+                target = vscode.ConfigurationTarget.Global;
+            }
+
+            this.savedWordWrap = { value: effectiveValue, target };
+            config.update('wordWrap', 'off', target);
+        }
+    }
+
+    private restoreWordWrap(): void {
+        if (this.savedWordWrap !== undefined) {
+            const config = vscode.workspace.getConfiguration('editor');
+            config.update('wordWrap', this.savedWordWrap.value, this.savedWordWrap.target);
+            this.savedWordWrap = undefined;
+        }
     }
 
     private buildGutterText(

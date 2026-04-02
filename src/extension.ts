@@ -36,8 +36,11 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }),
 
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openCommit', (fileUriStr: string, commitHash: string) => {
-            openCommitDiff(fileUriStr, commitHash);
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openCommit', (commitHash: string) => {
+            const editor = vscode.window.activeTextEditor;
+            if (editor && editor.document.uri.scheme === 'file') {
+                openCommitDiff(editor.document.uri, commitHash);
+            }
         }),
 
         vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openHistory', () => {
@@ -80,8 +83,7 @@ function updateContextForActiveEditor(): void {
     vscode.commands.executeCommand('setContext', 'tlcsdm-gitBlameInfo.isActive', isActive);
 }
 
-function openCommitDiff(fileUriStr: string, commitHash: string): void {
-    const fileUri = vscode.Uri.parse(fileUriStr);
+function openCommitDiff(fileUri: vscode.Uri, commitHash: string): void {
     const cwd = path.dirname(fileUri.fsPath);
     const fileName = path.basename(fileUri.fsPath);
     const shortHash = commitHash.substring(0, 7);
@@ -89,13 +91,13 @@ function openCommitDiff(fileUriStr: string, commitHash: string): void {
     // Show the diff between the commit's parent and the commit itself
     const beforeUri = vscode.Uri.from({
         scheme: 'git-blame-info',
-        path: fileUri.fsPath,
-        query: JSON.stringify({ commit: `${commitHash}~1`, path: fileUri.fsPath })
+        path: fileUri.path,
+        query: `${commitHash}~1`
     });
     const afterUri = vscode.Uri.from({
         scheme: 'git-blame-info',
-        path: fileUri.fsPath,
-        query: JSON.stringify({ commit: commitHash, path: fileUri.fsPath })
+        path: fileUri.path,
+        query: commitHash
     });
 
     vscode.commands.executeCommand(

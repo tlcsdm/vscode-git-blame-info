@@ -52,7 +52,7 @@ export class BlameHoverProvider implements vscode.HoverProvider {
         markdown.appendMarkdown('---\n\n');
 
         // Open Commit - uses our registered command to show the commit diff
-        const openCommitArgs = encodeURIComponent(JSON.stringify([document.uri.toString(), blameInfo.commit]));
+        const openCommitArgs = encodeURIComponent(JSON.stringify([blameInfo.commit]));
         markdown.appendMarkdown(
             `[$(git-commit) Open Commit](command:tlcsdm-gitBlameInfo.openCommit?${openCommitArgs} "View this commit")`
         );

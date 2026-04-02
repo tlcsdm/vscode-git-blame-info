@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import { BlameProvider, BlameInfo } from './blameProvider';
 
 export class BlameDecorationProvider implements vscode.Disposable {
-    private static readonly GUTTER_CHAR_WIDTH_EM = 0.55;
-    private static readonly GUTTER_MIN_WIDTH_EM = 8;
+    private static readonly DEFAULT_COLUMN_WIDTH = 50;
+    private static readonly COLUMN_MARGIN = '0 1.5em 0 0';
     private activeUris = new Set<string>();
     private decorationTypes: vscode.TextEditorDecorationType[] = [];
     private readonly commitColors: string[] = [
@@ -93,6 +93,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
         const showSummary = config.get<boolean>('showSummary', true);
         const useRelativeDate = config.get<boolean>('useRelativeDate', false);
         const dateFormat = config.get<string>('dateFormat', 'YYYY-MM-DD');
+        const columnWidth = config.get<number>('columnWidth', BlameDecorationProvider.DEFAULT_COLUMN_WIDTH);
 
         // Group lines by commit and assign colors
         const commitColorMap = new Map<string, string>();
@@ -118,10 +119,6 @@ export class BlameDecorationProvider implements vscode.Disposable {
             // Build the gutter text from the first line of this commit group
             const sampleInfo = infos[0];
             const gutterText = this.buildGutterText(sampleInfo, showAuthor, showDate, showCommitId, showSummary, useRelativeDate, dateFormat);
-            const gutterWidth = Math.max(
-                gutterText.length * BlameDecorationProvider.GUTTER_CHAR_WIDTH_EM,
-                BlameDecorationProvider.GUTTER_MIN_WIDTH_EM
-            );
 
             const decorationType = vscode.window.createTextEditorDecorationType({
                 backgroundColor,
@@ -129,9 +126,11 @@ export class BlameDecorationProvider implements vscode.Disposable {
                 before: gutterText.length > 0 ? {
                     contentText: gutterText,
                     color: new vscode.ThemeColor('editorLineNumber.foreground'),
+                    backgroundColor,
                     fontStyle: 'italic',
-                    width: '0',
-                    textDecoration: `none; font-size: 0.85em; white-space: nowrap; position: relative; left: -${gutterWidth}em; display: inline-block; min-width: ${gutterWidth}em; text-align: right;`
+                    width: `${columnWidth}ch`,
+                    margin: BlameDecorationProvider.COLUMN_MARGIN,
+                    textDecoration: 'none; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85em; border-right: 2px solid rgba(128, 128, 128, 0.3); padding-right: 0.5em;'
                 } : undefined,
                 overviewRulerColor: backgroundColor,
                 overviewRulerLane: vscode.OverviewRulerLane.Left

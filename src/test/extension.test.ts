@@ -33,5 +33,6 @@ suite('Extension Test Suite', () => {
         assert.strictEqual(config.get('showSummary'), true);
         assert.strictEqual(config.get('useRelativeDate'), false);
         assert.strictEqual(config.get('dateFormat'), 'YYYY-MM-DD');
+        assert.strictEqual(config.get('columnWidth'), 50);
     });
 });

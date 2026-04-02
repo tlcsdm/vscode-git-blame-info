@@ -99,6 +99,13 @@
           "type": "string",
           "default": "YYYY-MM-DD",
           "description": "Date format for the gutter annotation"
+        },
+        "tlcsdm-gitBlameInfo.columnWidth": {
+          "type": "number",
+          "default": 50,
+          "minimum": 20,
+          "maximum": 100,
+          "description": "Width of the blame annotation column in characters"
         }
       }
     }

@@ -4,25 +4,24 @@ import * as path from 'path';
 
 export class GitContentProvider implements vscode.TextDocumentContentProvider {
     provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-        let params: { commit: string; path: string };
-        try {
-            params = JSON.parse(uri.query);
-        } catch {
+        const commit = uri.query;
+        const filePath = uri.fsPath;
+
+        if (!commit || !filePath) {
             return Promise.resolve('');
         }
-        const commit: string = params.commit;
-        const filePath: string = params.path;
+
         const cwd = path.dirname(filePath);
 
-        return new Promise<string>((resolve, reject) => {
+        return new Promise<string>((resolve) => {
             // Get relative path from repo root for git show
             execFile('git', ['rev-parse', '--show-toplevel'], { cwd }, (err, repoRoot) => {
                 if (err) {
-                    reject(err);
+                    resolve('');
                     return;
                 }
                 const root = repoRoot.trim();
-                const relativePath = path.relative(root, filePath);
+                const relativePath = path.relative(root, filePath).replace(/\\/g, '/');
                 execFile('git', ['show', `${commit}:${relativePath}`], { cwd }, (error, stdout) => {
                     if (error) {
                         // Return empty content if the file didn't exist at that commit

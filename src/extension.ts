@@ -51,6 +51,11 @@ export function activate(context: vscode.ExtensionContext): void {
             vscode.commands.executeCommand('workbench.action.openSettings', 'tlcsdm-gitBlameInfo');
         }),
 
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.copyCommitId', (commitHash: string) => {
+            vscode.env.clipboard.writeText(commitHash);
+            vscode.window.showInformationMessage(`Copied: ${commitHash.substring(0, 7)}`);
+        }),
+
         vscode.languages.registerHoverProvider({ scheme: 'file' }, blameHoverProvider),
 
         vscode.workspace.onDidChangeConfiguration(e => {
@@ -88,26 +93,37 @@ function openCommitDiff(fileUri: vscode.Uri, commitHash: string): void {
     const fileName = path.basename(fileUri.fsPath);
     const shortHash = commitHash.substring(0, 7);
 
-    // Show the diff between the commit's parent and the commit itself
-    const beforeUri = vscode.Uri.from({
-        scheme: 'git-blame-info',
-        path: fileUri.path,
-        query: `${commitHash}~1`
-    });
-    const afterUri = vscode.Uri.from({
-        scheme: 'git-blame-info',
-        path: fileUri.path,
-        query: commitHash
-    });
+    // Pre-resolve parent commit to avoid ~1 in URI query strings
+    execFile('git', ['rev-parse', '--verify', `${commitHash}^`], { cwd }, (err, parentStdout) => {
+        const parentHash = err ? '' : parentStdout.trim();
 
-    vscode.commands.executeCommand(
-        'vscode.diff',
-        beforeUri,
-        afterUri,
-        `${fileName} (${shortHash})`
-    ).then(undefined, () => {
-        // Fallback: show commit details in output channel
-        showCommitInOutputChannel(cwd, commitHash);
+        const afterUri = vscode.Uri.from({
+            scheme: 'git-blame-info',
+            path: fileUri.path,
+            query: commitHash
+        });
+
+        if (parentHash) {
+            const beforeUri = vscode.Uri.from({
+                scheme: 'git-blame-info',
+                path: fileUri.path,
+                query: parentHash
+            });
+
+            vscode.commands.executeCommand(
+                'vscode.diff',
+                beforeUri,
+                afterUri,
+                `${fileName} (${shortHash})`
+            ).then(undefined, () => {
+                showCommitInOutputChannel(cwd, commitHash);
+            });
+        } else {
+            // No parent (initial commit) — just show the file at that commit
+            vscode.commands.executeCommand('vscode.open', afterUri).then(undefined, () => {
+                showCommitInOutputChannel(cwd, commitHash);
+            });
+        }
     });
 }
 

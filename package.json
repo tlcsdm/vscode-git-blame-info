@@ -51,6 +51,11 @@
         "command": "tlcsdm-gitBlameInfo.openSettings",
         "title": "Open Settings",
         "category": "Tlcsdm Git Blame Info"
+      },
+      {
+        "command": "tlcsdm-gitBlameInfo.copyCommitId",
+        "title": "Copy Commit ID",
+        "category": "Tlcsdm Git Blame Info"
       }
     ],
     "menus": {

@@ -7,19 +7,19 @@ export class BlameDecorationProvider implements vscode.Disposable {
     private activeUris = new Set<string>();
     private decorationTypes: vscode.TextEditorDecorationType[] = [];
     private savedWordWrap: { value: string; target: vscode.ConfigurationTarget } | undefined;
-    private readonly commitColors: string[] = [
-        'rgba(255, 235, 59, 0.15)',
-        'rgba(129, 199, 132, 0.15)',
-        'rgba(100, 181, 246, 0.15)',
-        'rgba(239, 154, 154, 0.15)',
-        'rgba(206, 147, 216, 0.15)',
-        'rgba(255, 183, 77, 0.15)',
-        'rgba(128, 222, 234, 0.15)',
-        'rgba(255, 138, 128, 0.15)',
-        'rgba(197, 225, 165, 0.15)',
-        'rgba(179, 157, 219, 0.15)',
-        'rgba(255, 213, 79, 0.15)',
-        'rgba(144, 202, 249, 0.15)',
+    private readonly commitColorPairs: { light: string; dark: string }[] = [
+        { light: 'rgba(255, 235, 59, 0.18)', dark: 'rgba(255, 235, 59, 0.10)' },
+        { light: 'rgba(129, 199, 132, 0.18)', dark: 'rgba(129, 199, 132, 0.10)' },
+        { light: 'rgba(100, 181, 246, 0.18)', dark: 'rgba(100, 181, 246, 0.10)' },
+        { light: 'rgba(239, 154, 154, 0.18)', dark: 'rgba(239, 154, 154, 0.10)' },
+        { light: 'rgba(206, 147, 216, 0.18)', dark: 'rgba(206, 147, 216, 0.10)' },
+        { light: 'rgba(255, 183, 77, 0.18)', dark: 'rgba(255, 183, 77, 0.10)' },
+        { light: 'rgba(128, 222, 234, 0.18)', dark: 'rgba(128, 222, 234, 0.10)' },
+        { light: 'rgba(255, 138, 128, 0.18)', dark: 'rgba(255, 138, 128, 0.10)' },
+        { light: 'rgba(197, 225, 165, 0.18)', dark: 'rgba(197, 225, 165, 0.10)' },
+        { light: 'rgba(179, 157, 219, 0.18)', dark: 'rgba(179, 157, 219, 0.10)' },
+        { light: 'rgba(255, 213, 79, 0.18)', dark: 'rgba(255, 213, 79, 0.10)' },
+        { light: 'rgba(144, 202, 249, 0.18)', dark: 'rgba(144, 202, 249, 0.10)' },
     ];
 
     constructor(private blameProvider: BlameProvider) {}
@@ -101,12 +101,12 @@ export class BlameDecorationProvider implements vscode.Disposable {
         const dateFormat = config.get<string>('dateFormat', 'YYYY-MM-DD');
         const columnWidth = config.get<number>('columnWidth', BlameDecorationProvider.DEFAULT_COLUMN_WIDTH);
 
-        // Assign colors to commits
-        const commitColorMap = new Map<string, string>();
+        // Assign color index to each unique commit
+        const commitColorIndexMap = new Map<string, number>();
         let colorIndex = 0;
         for (const info of blameInfo) {
-            if (!commitColorMap.has(info.commit)) {
-                commitColorMap.set(info.commit, this.commitColors[colorIndex % this.commitColors.length]);
+            if (!commitColorIndexMap.has(info.commit)) {
+                commitColorIndexMap.set(info.commit, colorIndex % this.commitColorPairs.length);
                 colorIndex++;
             }
         }
@@ -120,38 +120,64 @@ export class BlameDecorationProvider implements vscode.Disposable {
         const columnStyle = `none; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85em; border-right: 2px solid rgba(128, 128, 128, 0.3); padding-right: 0.5em;`;
         const totalLines = editor.document.lineCount;
 
-        // Group lines by background color for whole-line coloring
-        const colorGroups = new Map<string, { line: number; gutterText: string }[]>();
+        // Determine first line of each contiguous commit group (only these show text)
+        const isFirstInGroup = new Set<number>();
+        for (let line = 0; line < totalLines; line++) {
+            const info = blameMap.get(line);
+            if (info) {
+                const prevInfo = blameMap.get(line - 1);
+                if (!prevInfo || prevInfo.commit !== info.commit) {
+                    isFirstInGroup.add(line);
+                }
+            }
+        }
+
+        // Group lines by color index for whole-line coloring
+        const colorGroups = new Map<number, { line: number; gutterText: string }[]>();
         const noBlameLines: number[] = [];
 
         for (let line = 0; line < totalLines; line++) {
             const info = blameMap.get(line);
             if (info) {
-                const bgColor = commitColorMap.get(info.commit) || this.commitColors[0];
-                const gutterText = this.buildGutterText(info, showAuthor, showDate, showCommitId, showSummary, useRelativeDate, dateFormat);
-                if (!colorGroups.has(bgColor)) {
-                    colorGroups.set(bgColor, []);
+                const cIdx = commitColorIndexMap.get(info.commit) ?? 0;
+                const gutterText = isFirstInGroup.has(line)
+                    ? this.buildGutterText(info, showAuthor, showDate, showCommitId, showSummary, useRelativeDate, dateFormat)
+                    : '';
+                if (!colorGroups.has(cIdx)) {
+                    colorGroups.set(cIdx, []);
                 }
-                colorGroups.get(bgColor)!.push({ line, gutterText });
+                colorGroups.get(cIdx)!.push({ line, gutterText });
             } else {
                 noBlameLines.push(line);
             }
         }
 
-        // Create a decoration type per color group with whole-line background
-        for (const [bgColor, lines] of colorGroups) {
+        // Create a decoration type per color group with theme-aware backgrounds
+        for (const [cIdx, lines] of colorGroups) {
+            const colorPair = this.commitColorPairs[cIdx];
             const decorationType = vscode.window.createTextEditorDecorationType({
                 isWholeLine: true,
-                backgroundColor: bgColor,
+                light: { backgroundColor: colorPair.light },
+                dark: { backgroundColor: colorPair.dark },
             });
 
             const decorations: vscode.DecorationOptions[] = lines.map(({ line, gutterText }) => ({
                 range: new vscode.Range(line, 0, line, 0),
                 renderOptions: {
+                    light: {
+                        before: {
+                            color: '#333333',
+                            backgroundColor: colorPair.light,
+                        },
+                    },
+                    dark: {
+                        before: {
+                            color: '#d4d4d4',
+                            backgroundColor: colorPair.dark,
+                        },
+                    },
                     before: {
-                        contentText: gutterText || ' ',
-                        color: new vscode.ThemeColor('editorLineNumber.foreground'),
-                        backgroundColor: bgColor,
+                        contentText: gutterText || '\u00a0',
                         fontStyle: 'italic',
                         width: `${columnWidth}ch`,
                         margin: BlameDecorationProvider.COLUMN_MARGIN,
@@ -174,7 +200,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
                 range: new vscode.Range(line, 0, line, 0),
                 renderOptions: {
                     before: {
-                        contentText: ' ',
+                        contentText: '\u00a0',
                         width: `${columnWidth}ch`,
                         margin: BlameDecorationProvider.COLUMN_MARGIN,
                         textDecoration: columnStyle,

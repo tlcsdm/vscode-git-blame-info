@@ -23,6 +23,7 @@ suite('Extension Test Suite', () => {
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.openCommit'));
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.openHistory'));
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.openSettings'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.copyCommitId'));
     });
 
     test('Configuration defaults should be correct', () => {

@@ -48,7 +48,9 @@ export class BlameHoverProvider implements vscode.HoverProvider {
         markdown.appendMarkdown(`### $(git-commit) ${escapeMarkdown(blameInfo.summary)}\n\n`);
         markdown.appendMarkdown(`**$(person)** ${escapeMarkdown(blameInfo.author)} ${escapeMarkdown(blameInfo.authorMail)}\n\n`);
         markdown.appendMarkdown(`**$(calendar)** ${escapeMarkdown(dateStr)}\n\n`);
-        markdown.appendMarkdown(`**Commit:** \`${blameInfo.commit.substring(0, 7)}\`\n\n`);
+        markdown.appendMarkdown(`**Commit:** \`${blameInfo.commit.substring(0, 7)}\` `);
+        const copyArgs = encodeURIComponent(JSON.stringify([blameInfo.commit]));
+        markdown.appendMarkdown(`[$(copy)](command:tlcsdm-gitBlameInfo.copyCommitId?${copyArgs} "Copy full commit hash")\n\n`);
         markdown.appendMarkdown('---\n\n');
 
         // Open Commit - uses our registered command to show the commit diff

@@ -1,14 +1,16 @@
-name: Publish
+# This workflow allows manual publishing to VS Code Marketplace
+
+name: Publish to VS Code Marketplace
 
 on:
   workflow_dispatch:
     inputs:
-      bump:
-        description: "Version bump type"
-        required: true
-        default: "patch"
+      bump_version:
+        description: 'Bump version before publish (patch/minor/major), leave empty to use current version'
+        required: false
         type: choice
         options:
+          - ''
           - patch
           - minor
           - major
@@ -19,27 +21,39 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v6
         with:
-          node-version: 22
-          cache: "npm"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
       - name: Install dependencies
         run: npm ci
+
       - name: Configure Git
+        if: ${{ inputs.bump_version != '' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Bump version
-        run: npm version ${{ github.event.inputs.bump }} -m "chore: release v%s"
+        if: ${{ inputs.bump_version != '' }}
+        run: |
+          npm version ${{ inputs.bump_version }} -m "chore: bump version to %s"
+          git push
+          git push --tags
+
       - name: Compile
         run: npm run compile
-      - name: Publish
+
+      - name: Publish to VS Code Marketplace
         run: npx @vscode/vsce publish
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-      - name: Push version bump
-        run: git push && git push --tags

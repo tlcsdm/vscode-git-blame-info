@@ -107,27 +107,24 @@ function openCommitDiff(fileUri: vscode.Uri, commitHash: string): void {
             query: commitHash
         });
 
-        if (parentHash) {
-            const beforeUri = vscode.Uri.from({
-                scheme: 'git-blame-info',
-                path: fileUri.path,
-                query: parentHash
-            });
+        // For initial commits (no parent), diff against an empty document
+        // so all lines show as additions — consistent UX for all commits
+        const beforeUri = parentHash
+            ? vscode.Uri.from({ scheme: 'git-blame-info', path: fileUri.path, query: parentHash })
+            : vscode.Uri.from({ scheme: 'git-blame-info', path: fileUri.path, query: '' });
 
-            vscode.commands.executeCommand(
-                'vscode.diff',
-                beforeUri,
-                afterUri,
-                `${fileName} (${shortHash})`
-            ).then(undefined, () => {
-                showCommitInOutputChannel(cwd, commitHash);
-            });
-        } else {
-            // No parent (initial commit) — just show the file at that commit
-            vscode.commands.executeCommand('vscode.open', afterUri).then(undefined, () => {
-                showCommitInOutputChannel(cwd, commitHash);
-            });
-        }
+        const title = parentHash
+            ? `${fileName} (${shortHash})`
+            : `${fileName} (${shortHash} — initial commit)`;
+
+        vscode.commands.executeCommand(
+            'vscode.diff',
+            beforeUri,
+            afterUri,
+            title
+        ).then(undefined, () => {
+            showCommitInOutputChannel(cwd, commitHash);
+        });
     });
 }
 

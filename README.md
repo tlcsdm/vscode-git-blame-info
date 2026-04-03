@@ -48,7 +48,7 @@ When hovering over an annotated line, the popup displays full commit details and
 
 1. Open VS Code
 2. Go to Extensions (`Ctrl+Shift+X`)
-3. Search for "Git Blame Info"
+3. Search for "Tlcsdm Git Blame Info"
 4. Click Install
 
 ### From VSIX File

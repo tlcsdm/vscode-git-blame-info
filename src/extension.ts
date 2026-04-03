@@ -36,10 +36,10 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }),
 
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openCommit', (commitHash: string) => {
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openCommit', (commitHash: string, blameFilename?: string) => {
             const editor = vscode.window.activeTextEditor;
             if (editor && editor.document.uri.scheme === 'file') {
-                openCommitDiff(editor.document.uri, commitHash);
+                openCommitDiff(editor.document.uri, commitHash, blameFilename);
             }
         }),
 
@@ -92,7 +92,7 @@ function updateContextForActiveEditor(): void {
     vscode.commands.executeCommand('setContext', 'tlcsdm-gitBlameInfo.isActive', isActive);
 }
 
-function openCommitDiff(fileUri: vscode.Uri, commitHash: string): void {
+function openCommitDiff(fileUri: vscode.Uri, commitHash: string, blameFilename?: string): void {
     const cwd = path.dirname(fileUri.fsPath);
     const fileName = path.basename(fileUri.fsPath);
     const shortHash = commitHash.substring(0, 7);
@@ -101,16 +101,19 @@ function openCommitDiff(fileUri: vscode.Uri, commitHash: string): void {
     execFile('git', ['rev-parse', '--verify', `${commitHash}^`], { cwd }, (err, parentStdout) => {
         const parentHash = err ? '' : parentStdout.trim();
 
+        // Use blame filename (path at that commit) in fragment so GitContentProvider
+        // can use it for git show instead of the current file path
         const afterUri = vscode.Uri.from({
             scheme: 'git-blame-info',
             path: fileUri.path,
-            query: commitHash
+            query: commitHash,
+            fragment: blameFilename || ''
         });
 
         // For initial commits (no parent), diff against an empty document
         // so all lines show as additions — consistent UX for all commits
         const beforeUri = parentHash
-            ? vscode.Uri.from({ scheme: 'git-blame-info', path: fileUri.path, query: parentHash })
+            ? vscode.Uri.from({ scheme: 'git-blame-info', path: fileUri.path, query: parentHash, fragment: blameFilename || '' })
             : vscode.Uri.from({ scheme: 'git-blame-info', path: fileUri.path, query: '' });
 
         const title = parentHash

@@ -33,6 +33,8 @@ export class GitHistoryProvider {
         this.currentFileUri = fileUri;
 
         if (this.panel) {
+            this.panel.title = `History: ${fileName}`;
+            this.panel.webview.html = this.getHtml(entries, fileName, highlightCommit);
             this.panel.reveal(vscode.ViewColumn.One);
         } else {
             this.panel = vscode.window.createWebviewPanel(
@@ -51,10 +53,9 @@ export class GitHistoryProvider {
                     this.openCommitDiff(this.currentFileUri, message.hash);
                 }
             });
-        }
 
-        this.panel.title = `History: ${fileName}`;
-        this.panel.webview.html = this.getHtml(entries, fileName, highlightCommit);
+            this.panel.webview.html = this.getHtml(entries, fileName, highlightCommit);
+        }
     }
 
     private getGitLog(cwd: string, filePath: string): Promise<LogEntry[]> {
@@ -252,6 +253,7 @@ export class GitHistoryProvider {
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 }

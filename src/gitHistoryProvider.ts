@@ -117,7 +117,7 @@ export class GitHistoryProvider {
                                 authorMail: fields[3],
                                 date: fields[4],
                                 subject: fields[5],
-                                filename: filename,
+                                filename,
                             });
                         }
                     }
@@ -362,9 +362,9 @@ export class GitHistoryProvider {
         let contextMenuHash = null;
         let detailVisible = true;
 
-        const entryByHash = {};
+        const entryByHash = Object.create(null);
         entries.forEach(function(entry, index) {
-            entryByHash[entry.hash] = { entry: entry, index: index };
+            entryByHash[entry.hash] = { entry, index };
         });
 
         // Click hash link -> open diff with previous file commit

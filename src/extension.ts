@@ -5,6 +5,7 @@ import { BlameProvider } from './blameProvider';
 import { BlameDecorationProvider } from './blameDecorationProvider';
 import { BlameHoverProvider } from './blameHoverProvider';
 import { GitContentProvider } from './gitContentProvider';
+import { GitHistoryProvider } from './gitHistoryProvider';
 
 let blameProvider: BlameProvider;
 let blameDecorationProvider: BlameDecorationProvider;
@@ -18,6 +19,18 @@ export function activate(context: vscode.ExtensionContext): void {
     outputChannel = vscode.window.createOutputChannel('Tlcsdm Git Blame Info');
 
     const gitContentProvider = new GitContentProvider();
+    const gitHistoryProvider = new GitHistoryProvider({
+        openFileCommitDiff: (fileUri, commitHash, prevCommitHash, filename, prevFilename) => {
+            openFileHistoryDiff(fileUri, commitHash, prevCommitHash, filename, prevFilename);
+        },
+        copyCommitId: (commitHash) => {
+            vscode.env.clipboard.writeText(commitHash);
+            vscode.window.showInformationMessage(`Copied: ${commitHash.substring(0, 7)}`);
+        },
+        compareWithCurrent: (fileUri, commitHash, filename) => {
+            compareWithCurrentFile(fileUri, commitHash, filename);
+        }
+    });
 
     context.subscriptions.push(
         vscode.workspace.registerTextDocumentContentProvider('git-blame-info', gitContentProvider),
@@ -43,8 +56,11 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }),
 
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openHistory', () => {
-            vscode.commands.executeCommand('timeline.focus');
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openHistory', (commitHash?: string) => {
+            const editor = vscode.window.activeTextEditor;
+            if (editor && editor.document.uri.scheme === 'file') {
+                gitHistoryProvider.show(editor.document.uri, commitHash);
+            }
         }),
 
         vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openSettings', () => {
@@ -141,6 +157,57 @@ function showCommitInOutputChannel(cwd: string, commitHash: string): void {
         outputChannel.appendLine(stdout);
         outputChannel.show();
     });
+}
+
+function openFileHistoryDiff(fileUri: vscode.Uri, commitHash: string, prevCommitHash: string | null, filename: string, prevFilename: string): void {
+    const fileName = path.basename(fileUri.fsPath);
+    const shortHash = commitHash.substring(0, 7);
+
+    const afterUri = vscode.Uri.from({
+        scheme: 'git-blame-info',
+        path: fileUri.path,
+        query: commitHash,
+        fragment: filename || ''
+    });
+
+    if (prevCommitHash) {
+        const prevShortHash = prevCommitHash.substring(0, 7);
+        const beforeUri = vscode.Uri.from({
+            scheme: 'git-blame-info',
+            path: fileUri.path,
+            query: prevCommitHash,
+            fragment: prevFilename || ''
+        });
+        const title = `${fileName} (${prevShortHash} ↔ ${shortHash})`;
+        vscode.commands.executeCommand('vscode.diff', beforeUri, afterUri, title);
+    } else {
+        const beforeUri = vscode.Uri.from({ scheme: 'git-blame-info', path: fileUri.path, query: '' });
+        const title = `${fileName} (${shortHash} — initial commit)`;
+        vscode.commands.executeCommand('vscode.diff', beforeUri, afterUri, title);
+    }
+}
+
+function compareWithCurrentFile(fileUri: vscode.Uri, commitHash: string, filename: string): void {
+    const fileName = path.basename(fileUri.fsPath);
+    const shortHash = commitHash.substring(0, 7);
+
+    const commitUri = vscode.Uri.from({
+        scheme: 'git-blame-info',
+        path: fileUri.path,
+        query: commitHash,
+        fragment: filename || ''
+    });
+
+    // Use virtual document for current file so both sides are read-only
+    // and don't show blame decorations from the active editor
+    const currentUri = vscode.Uri.from({
+        scheme: 'git-blame-info',
+        path: fileUri.path,
+        query: '__WORKING_COPY__'
+    });
+
+    const title = `${fileName} (${shortHash} ↔ Current)`;
+    vscode.commands.executeCommand('vscode.diff', commitUri, currentUri, title);
 }
 
 export function deactivate(): void {

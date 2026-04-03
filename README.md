@@ -2,7 +2,7 @@
 
 Display git blame information in the editor gutter with color-coded annotations, inspired by Eclipse EGit.
 
-![Demo](images/demo.gif)
+![Demo](readme/demo.gif)
 
 ## Features
 

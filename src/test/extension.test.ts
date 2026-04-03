@@ -20,13 +20,10 @@ suite('Extension Test Suite', () => {
         const commands = await vscode.commands.getCommands(true);
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.showRevisionInformation'));
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.hideRevisionInformation'));
-        assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleAuthor'));
-        assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleDate'));
-        assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleCommitId'));
-        assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleSummary'));
-        assert.ok(commands.includes('tlcsdm-gitBlameInfo.toggleRelativeDate'));
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.openCommit'));
         assert.ok(commands.includes('tlcsdm-gitBlameInfo.openHistory'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.openSettings'));
+        assert.ok(commands.includes('tlcsdm-gitBlameInfo.copyCommitId'));
     });
 
     test('Configuration defaults should be correct', () => {
@@ -37,5 +34,6 @@ suite('Extension Test Suite', () => {
         assert.strictEqual(config.get('showSummary'), true);
         assert.strictEqual(config.get('useRelativeDate'), false);
         assert.strictEqual(config.get('dateFormat'), 'YYYY-MM-DD');
+        assert.strictEqual(config.get('columnWidth'), 50);
     });
 });

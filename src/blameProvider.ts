@@ -51,7 +51,7 @@ export class BlameProvider implements vscode.Disposable {
             const cwd = path.dirname(uri.fsPath);
             const filePath = uri.fsPath;
 
-            execFile('git', ['blame', '--porcelain', filePath], { cwd }, (error, stdout) => {
+            execFile('git', ['blame', '--line-porcelain', filePath], { cwd }, (error, stdout) => {
                 if (error) {
                     resolve([]);
                     return;

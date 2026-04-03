@@ -30,47 +30,32 @@
       {
         "command": "tlcsdm-gitBlameInfo.showRevisionInformation",
         "title": "Show Revision Information",
-        "category": "Git Blame Info"
+        "category": "Tlcsdm Git Blame Info"
       },
       {
         "command": "tlcsdm-gitBlameInfo.hideRevisionInformation",
         "title": "Hide Revision Information",
-        "category": "Git Blame Info"
-      },
-      {
-        "command": "tlcsdm-gitBlameInfo.toggleAuthor",
-        "title": "Toggle Author",
-        "category": "Git Blame Info: Revisions"
-      },
-      {
-        "command": "tlcsdm-gitBlameInfo.toggleDate",
-        "title": "Toggle Date",
-        "category": "Git Blame Info: Revisions"
-      },
-      {
-        "command": "tlcsdm-gitBlameInfo.toggleCommitId",
-        "title": "Toggle Commit ID",
-        "category": "Git Blame Info: Revisions"
-      },
-      {
-        "command": "tlcsdm-gitBlameInfo.toggleSummary",
-        "title": "Toggle Summary",
-        "category": "Git Blame Info: Revisions"
-      },
-      {
-        "command": "tlcsdm-gitBlameInfo.toggleRelativeDate",
-        "title": "Toggle Relative Date",
-        "category": "Git Blame Info: Revisions"
+        "category": "Tlcsdm Git Blame Info"
       },
       {
         "command": "tlcsdm-gitBlameInfo.openCommit",
         "title": "Open Commit",
-        "category": "Git Blame Info"
+        "category": "Tlcsdm Git Blame Info"
       },
       {
         "command": "tlcsdm-gitBlameInfo.openHistory",
         "title": "Open History",
-        "category": "Git Blame Info"
+        "category": "Tlcsdm Git Blame Info"
+      },
+      {
+        "command": "tlcsdm-gitBlameInfo.openSettings",
+        "title": "Open Settings",
+        "category": "Tlcsdm Git Blame Info"
+      },
+      {
+        "command": "tlcsdm-gitBlameInfo.copyCommitId",
+        "title": "Copy Commit ID",
+        "category": "Tlcsdm Git Blame Info"
       }
     ],
     "menus": {
@@ -85,45 +70,10 @@
           "when": "tlcsdm-gitBlameInfo.isActive",
           "group": "1_modification"
         }
-      ],
-      "editor/title": [
-        {
-          "submenu": "tlcsdm-gitBlameInfo.revisions",
-          "when": "tlcsdm-gitBlameInfo.isActive",
-          "group": "navigation"
-        }
-      ],
-      "tlcsdm-gitBlameInfo.revisions": [
-        {
-          "command": "tlcsdm-gitBlameInfo.toggleAuthor",
-          "group": "1_display"
-        },
-        {
-          "command": "tlcsdm-gitBlameInfo.toggleDate",
-          "group": "1_display"
-        },
-        {
-          "command": "tlcsdm-gitBlameInfo.toggleCommitId",
-          "group": "1_display"
-        },
-        {
-          "command": "tlcsdm-gitBlameInfo.toggleSummary",
-          "group": "1_display"
-        },
-        {
-          "command": "tlcsdm-gitBlameInfo.toggleRelativeDate",
-          "group": "2_format"
-        }
       ]
     },
-    "submenus": [
-      {
-        "id": "tlcsdm-gitBlameInfo.revisions",
-        "label": "Revisions"
-      }
-    ],
     "configuration": {
-      "title": "Git Blame Info",
+      "title": "Tlcsdm Git Blame Info",
       "properties": {
         "tlcsdm-gitBlameInfo.showAuthor": {
           "type": "boolean",
@@ -154,6 +104,13 @@
           "type": "string",
           "default": "YYYY-MM-DD",
           "description": "Date format for the gutter annotation"
+        },
+        "tlcsdm-gitBlameInfo.columnWidth": {
+          "type": "number",
+          "default": 50,
+          "minimum": 20,
+          "maximum": 100,
+          "description": "Width of the blame annotation column in characters"
         }
       }
     }

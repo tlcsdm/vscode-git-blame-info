@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext): void {
     blameProvider = new BlameProvider();
     blameDecorationProvider = new BlameDecorationProvider(blameProvider);
     blameHoverProvider = new BlameHoverProvider(blameProvider, blameDecorationProvider);
-    outputChannel = vscode.window.createOutputChannel('Git Blame Info');
+    outputChannel = vscode.window.createOutputChannel('Tlcsdm Git Blame Info');
 
     const gitContentProvider = new GitContentProvider();
 
@@ -36,42 +36,24 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }),
 
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleAuthor', () => {
-            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
-            const current = config.get<boolean>('showAuthor', true);
-            config.update('showAuthor', !current, vscode.ConfigurationTarget.Global);
-        }),
-
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleDate', () => {
-            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
-            const current = config.get<boolean>('showDate', true);
-            config.update('showDate', !current, vscode.ConfigurationTarget.Global);
-        }),
-
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleCommitId', () => {
-            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
-            const current = config.get<boolean>('showCommitId', false);
-            config.update('showCommitId', !current, vscode.ConfigurationTarget.Global);
-        }),
-
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleSummary', () => {
-            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
-            const current = config.get<boolean>('showSummary', true);
-            config.update('showSummary', !current, vscode.ConfigurationTarget.Global);
-        }),
-
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.toggleRelativeDate', () => {
-            const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
-            const current = config.get<boolean>('useRelativeDate', false);
-            config.update('useRelativeDate', !current, vscode.ConfigurationTarget.Global);
-        }),
-
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openCommit', (fileUriStr: string, commitHash: string) => {
-            openCommitDiff(fileUriStr, commitHash);
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openCommit', (commitHash: string, blameFilename?: string) => {
+            const editor = vscode.window.activeTextEditor;
+            if (editor && editor.document.uri.scheme === 'file') {
+                openCommitDiff(editor.document.uri, commitHash, blameFilename);
+            }
         }),
 
         vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openHistory', () => {
             vscode.commands.executeCommand('timeline.focus');
+        }),
+
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openSettings', () => {
+            vscode.commands.executeCommand('workbench.action.openSettings', 'tlcsdm-gitBlameInfo');
+        }),
+
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.copyCommitId', (commitHash: string) => {
+            vscode.env.clipboard.writeText(commitHash);
+            vscode.window.showInformationMessage(`Copied: ${commitHash.substring(0, 7)}`);
         }),
 
         vscode.languages.registerHoverProvider({ scheme: 'file' }, blameHoverProvider),
@@ -94,6 +76,10 @@ export function activate(context: vscode.ExtensionContext): void {
             blameDecorationProvider.refresh();
         }),
 
+        vscode.window.onDidChangeActiveColorTheme(() => {
+            blameDecorationProvider.refresh();
+        }),
+
         blameProvider,
         blameDecorationProvider,
         outputChannel
@@ -106,32 +92,42 @@ function updateContextForActiveEditor(): void {
     vscode.commands.executeCommand('setContext', 'tlcsdm-gitBlameInfo.isActive', isActive);
 }
 
-function openCommitDiff(fileUriStr: string, commitHash: string): void {
-    const fileUri = vscode.Uri.parse(fileUriStr);
+function openCommitDiff(fileUri: vscode.Uri, commitHash: string, blameFilename?: string): void {
     const cwd = path.dirname(fileUri.fsPath);
     const fileName = path.basename(fileUri.fsPath);
     const shortHash = commitHash.substring(0, 7);
 
-    // Show the diff between the commit's parent and the commit itself
-    const beforeUri = vscode.Uri.from({
-        scheme: 'git-blame-info',
-        path: fileUri.fsPath,
-        query: JSON.stringify({ commit: `${commitHash}~1`, path: fileUri.fsPath })
-    });
-    const afterUri = vscode.Uri.from({
-        scheme: 'git-blame-info',
-        path: fileUri.fsPath,
-        query: JSON.stringify({ commit: commitHash, path: fileUri.fsPath })
-    });
+    // Pre-resolve parent commit to avoid ~1 in URI query strings
+    execFile('git', ['rev-parse', '--verify', `${commitHash}^`], { cwd }, (err, parentStdout) => {
+        const parentHash = err ? '' : parentStdout.trim();
 
-    vscode.commands.executeCommand(
-        'vscode.diff',
-        beforeUri,
-        afterUri,
-        `${fileName} (${shortHash})`
-    ).then(undefined, () => {
-        // Fallback: show commit details in output channel
-        showCommitInOutputChannel(cwd, commitHash);
+        // Use blame filename (path at that commit) in fragment so GitContentProvider
+        // can use it for git show instead of the current file path
+        const afterUri = vscode.Uri.from({
+            scheme: 'git-blame-info',
+            path: fileUri.path,
+            query: commitHash,
+            fragment: blameFilename || ''
+        });
+
+        // For initial commits (no parent), diff against an empty document
+        // so all lines show as additions — consistent UX for all commits
+        const beforeUri = parentHash
+            ? vscode.Uri.from({ scheme: 'git-blame-info', path: fileUri.path, query: parentHash, fragment: blameFilename || '' })
+            : vscode.Uri.from({ scheme: 'git-blame-info', path: fileUri.path, query: '' });
+
+        const title = parentHash
+            ? `${fileName} (${shortHash})`
+            : `${fileName} (${shortHash} — initial commit)`;
+
+        vscode.commands.executeCommand(
+            'vscode.diff',
+            beforeUri,
+            afterUri,
+            title
+        ).then(undefined, () => {
+            showCommitInOutputChannel(cwd, commitHash);
+        });
     });
 }
 

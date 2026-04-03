@@ -2,23 +2,24 @@ import * as vscode from 'vscode';
 import { BlameProvider, BlameInfo } from './blameProvider';
 
 export class BlameDecorationProvider implements vscode.Disposable {
-    private static readonly GUTTER_CHAR_WIDTH_EM = 0.55;
-    private static readonly GUTTER_MIN_WIDTH_EM = 8;
+    private static readonly DEFAULT_COLUMN_WIDTH = 50;
+    private static readonly COLUMN_MARGIN = '0 1.5em 0 0';
     private activeUris = new Set<string>();
     private decorationTypes: vscode.TextEditorDecorationType[] = [];
-    private readonly commitColors: string[] = [
-        'rgba(255, 235, 59, 0.15)',
-        'rgba(129, 199, 132, 0.15)',
-        'rgba(100, 181, 246, 0.15)',
-        'rgba(239, 154, 154, 0.15)',
-        'rgba(206, 147, 216, 0.15)',
-        'rgba(255, 183, 77, 0.15)',
-        'rgba(128, 222, 234, 0.15)',
-        'rgba(255, 138, 128, 0.15)',
-        'rgba(197, 225, 165, 0.15)',
-        'rgba(179, 157, 219, 0.15)',
-        'rgba(255, 213, 79, 0.15)',
-        'rgba(144, 202, 249, 0.15)',
+    private savedWordWrap: { value: string; target: vscode.ConfigurationTarget } | undefined;
+    private readonly commitColorPairs: { light: string; dark: string }[] = [
+        { light: 'rgba(255, 235, 59, 0.18)', dark: 'rgba(255, 235, 59, 0.10)' },
+        { light: 'rgba(129, 199, 132, 0.18)', dark: 'rgba(129, 199, 132, 0.10)' },
+        { light: 'rgba(100, 181, 246, 0.18)', dark: 'rgba(100, 181, 246, 0.10)' },
+        { light: 'rgba(239, 154, 154, 0.18)', dark: 'rgba(239, 154, 154, 0.10)' },
+        { light: 'rgba(206, 147, 216, 0.18)', dark: 'rgba(206, 147, 216, 0.10)' },
+        { light: 'rgba(255, 183, 77, 0.18)', dark: 'rgba(255, 183, 77, 0.10)' },
+        { light: 'rgba(128, 222, 234, 0.18)', dark: 'rgba(128, 222, 234, 0.10)' },
+        { light: 'rgba(255, 138, 128, 0.18)', dark: 'rgba(255, 138, 128, 0.10)' },
+        { light: 'rgba(197, 225, 165, 0.18)', dark: 'rgba(197, 225, 165, 0.10)' },
+        { light: 'rgba(179, 157, 219, 0.18)', dark: 'rgba(179, 157, 219, 0.10)' },
+        { light: 'rgba(255, 213, 79, 0.18)', dark: 'rgba(255, 213, 79, 0.10)' },
+        { light: 'rgba(144, 202, 249, 0.18)', dark: 'rgba(144, 202, 249, 0.10)' },
     ];
 
     constructor(private blameProvider: BlameProvider) {}
@@ -26,6 +27,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
     dispose(): void {
         this.clearDecorations();
         this.activeUris.clear();
+        this.restoreWordWrap();
     }
 
     activate(): void {
@@ -33,6 +35,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
         if (editor && editor.document.uri.scheme === 'file') {
             this.activeUris.add(editor.document.uri.toString());
             this.applyDecorations(editor);
+            this.disableWordWrap();
         }
     }
 
@@ -42,6 +45,9 @@ export class BlameDecorationProvider implements vscode.Disposable {
             this.activeUris.delete(editor.document.uri.toString());
         }
         this.clearDecorations();
+        if (!this.hasActiveEditors()) {
+            this.restoreWordWrap();
+        }
     }
 
     isActiveForEditor(editor: vscode.TextEditor): boolean {
@@ -93,57 +99,154 @@ export class BlameDecorationProvider implements vscode.Disposable {
         const showSummary = config.get<boolean>('showSummary', true);
         const useRelativeDate = config.get<boolean>('useRelativeDate', false);
         const dateFormat = config.get<string>('dateFormat', 'YYYY-MM-DD');
+        const columnWidth = config.get<number>('columnWidth', BlameDecorationProvider.DEFAULT_COLUMN_WIDTH);
 
-        // Group lines by commit and assign colors
-        const commitColorMap = new Map<string, string>();
+        // Assign color to each unique commit (use predefined palette first, then generate)
+        const commitColorMap = new Map<string, { light: string; dark: string }>();
         let colorIndex = 0;
         for (const info of blameInfo) {
             if (!commitColorMap.has(info.commit)) {
-                commitColorMap.set(info.commit, this.commitColors[colorIndex % this.commitColors.length]);
+                if (colorIndex < this.commitColorPairs.length) {
+                    commitColorMap.set(info.commit, this.commitColorPairs[colorIndex]);
+                } else {
+                    commitColorMap.set(info.commit, this.generateColorPair(colorIndex));
+                }
                 colorIndex++;
             }
         }
 
-        // Group blame info by commit for batch decoration
-        const commitGroups = new Map<string, BlameInfo[]>();
+        // Build line -> blame info map (0-indexed)
+        const blameMap = new Map<number, BlameInfo>();
         for (const info of blameInfo) {
-            const group = commitGroups.get(info.commit) || [];
-            group.push(info);
-            commitGroups.set(info.commit, group);
+            blameMap.set(info.lineNumber - 1, info);
         }
 
-        for (const [commit, infos] of commitGroups) {
-            const backgroundColor = commitColorMap.get(commit) || this.commitColors[0];
+        const columnStyle = `none; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85em; border-right: 2px solid rgba(128, 128, 128, 0.3); padding-right: 0.5em;`;
+        const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark ||
+            vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrast;
+        const gutterTextColor = isDark ? '#d4d4d4' : '#333333';
+        const totalLines = editor.document.lineCount;
 
-            // Build the gutter text from the first line of this commit group
-            const sampleInfo = infos[0];
-            const gutterText = this.buildGutterText(sampleInfo, showAuthor, showDate, showCommitId, showSummary, useRelativeDate, dateFormat);
-            const gutterWidth = Math.max(
-                gutterText.length * BlameDecorationProvider.GUTTER_CHAR_WIDTH_EM,
-                BlameDecorationProvider.GUTTER_MIN_WIDTH_EM
-            );
+        // Determine first line of each contiguous commit group (only these show text)
+        const isFirstInGroup = new Set<number>();
+        for (let line = 0; line < totalLines; line++) {
+            const info = blameMap.get(line);
+            if (info) {
+                const prevInfo = blameMap.get(line - 1);
+                if (!prevInfo || prevInfo.commit !== info.commit) {
+                    isFirstInGroup.add(line);
+                }
+            }
+        }
 
+        // Group lines by color key for whole-line coloring
+        const colorGroups = new Map<string, { colorPair: { light: string; dark: string }; lines: { line: number; gutterText: string }[] }>();
+        const noBlameLines: number[] = [];
+
+        for (let line = 0; line < totalLines; line++) {
+            const info = blameMap.get(line);
+            if (info) {
+                const colorPair = commitColorMap.get(info.commit) ?? this.commitColorPairs[0];
+                const colorKey = `${colorPair.light}|${colorPair.dark}`;
+                const gutterText = isFirstInGroup.has(line)
+                    ? this.buildGutterText(info, showAuthor, showDate, showCommitId, showSummary, useRelativeDate, dateFormat)
+                    : '';
+                if (!colorGroups.has(colorKey)) {
+                    colorGroups.set(colorKey, { colorPair, lines: [] });
+                }
+                colorGroups.get(colorKey)!.lines.push({ line, gutterText });
+            } else {
+                noBlameLines.push(line);
+            }
+        }
+
+        // Create a decoration type per color group with theme-aware backgrounds
+        for (const [, { colorPair, lines }] of colorGroups) {
             const decorationType = vscode.window.createTextEditorDecorationType({
-                backgroundColor,
                 isWholeLine: true,
-                before: gutterText.length > 0 ? {
-                    contentText: gutterText,
-                    color: new vscode.ThemeColor('editorLineNumber.foreground'),
-                    fontStyle: 'italic',
-                    width: '0',
-                    textDecoration: `none; font-size: 0.85em; white-space: nowrap; position: relative; left: -${gutterWidth}em; display: inline-block; min-width: ${gutterWidth}em; text-align: right;`
-                } : undefined,
-                overviewRulerColor: backgroundColor,
-                overviewRulerLane: vscode.OverviewRulerLane.Left
+                light: { backgroundColor: colorPair.light },
+                dark: { backgroundColor: colorPair.dark },
             });
 
-            const ranges: vscode.DecorationOptions[] = infos.map(info => ({
-                range: new vscode.Range(info.lineNumber - 1, 0, info.lineNumber - 1, 0)
+            const decorations: vscode.DecorationOptions[] = lines.map(({ line, gutterText }) => ({
+                range: new vscode.Range(line, 0, line, 0),
+                renderOptions: {
+                    before: {
+                        contentText: gutterText || '\u00a0',
+                        color: gutterTextColor,
+                        backgroundColor: isDark ? colorPair.dark : colorPair.light,
+                        fontStyle: 'italic',
+                        width: `${columnWidth}ch`,
+                        margin: BlameDecorationProvider.COLUMN_MARGIN,
+                        textDecoration: columnStyle,
+                    },
+                },
             }));
 
-            editor.setDecorations(decorationType, ranges);
+            editor.setDecorations(decorationType, decorations);
             this.decorationTypes.push(decorationType);
         }
+
+        // Spacer decoration for lines without blame info
+        if (noBlameLines.length > 0) {
+            const spacerType = vscode.window.createTextEditorDecorationType({
+                isWholeLine: true,
+            });
+
+            const spacerDecorations: vscode.DecorationOptions[] = noBlameLines.map(line => ({
+                range: new vscode.Range(line, 0, line, 0),
+                renderOptions: {
+                    before: {
+                        contentText: '\u00a0',
+                        width: `${columnWidth}ch`,
+                        margin: BlameDecorationProvider.COLUMN_MARGIN,
+                        textDecoration: columnStyle,
+                    },
+                },
+            }));
+
+            editor.setDecorations(spacerType, spacerDecorations);
+            this.decorationTypes.push(spacerType);
+        }
+    }
+
+    private disableWordWrap(): void {
+        const config = vscode.workspace.getConfiguration('editor');
+        const effectiveValue = config.get<string>('wordWrap');
+
+        if (effectiveValue && effectiveValue !== 'off' && this.savedWordWrap === undefined) {
+            const inspect = config.inspect<string>('wordWrap');
+            let target: vscode.ConfigurationTarget;
+            if (inspect?.workspaceFolderValue !== undefined) {
+                target = vscode.ConfigurationTarget.WorkspaceFolder;
+            } else if (inspect?.workspaceValue !== undefined) {
+                target = vscode.ConfigurationTarget.Workspace;
+            } else {
+                target = vscode.ConfigurationTarget.Global;
+            }
+
+            this.savedWordWrap = { value: effectiveValue, target };
+            config.update('wordWrap', 'off', target);
+        }
+    }
+
+    private restoreWordWrap(): void {
+        if (this.savedWordWrap !== undefined) {
+            const config = vscode.workspace.getConfiguration('editor');
+            config.update('wordWrap', this.savedWordWrap.value, this.savedWordWrap.target);
+            this.savedWordWrap = undefined;
+        }
+    }
+
+    private generateColorPair(index: number): { light: string; dark: string } {
+        // Use golden angle to distribute hues evenly
+        const hue = (index * 137.508) % 360;
+        const saturation = 60 + (index % 3) * 10;
+        const lightness = 55 + (index % 4) * 5;
+        return {
+            light: `hsla(${Math.round(hue)}, ${saturation}%, ${lightness}%, 0.18)`,
+            dark: `hsla(${Math.round(hue)}, ${saturation}%, ${lightness}%, 0.10)`,
+        };
     }
 
     private buildGutterText(
@@ -161,18 +264,7 @@ export class BlameDecorationProvider implements vscode.Disposable {
             return 'Uncommitted';
         }
 
-        if (showCommitId) {
-            parts.push(info.commit.substring(0, 7));
-        }
-
-        if (showSummary) {
-            const maxLen = 50;
-            const summary = info.summary.length > maxLen
-                ? info.summary.substring(0, maxLen) + '…'
-                : info.summary;
-            parts.push(summary);
-        }
-
+        // Author and date first, then commit ID and summary
         if (showAuthor) {
             parts.push(info.author);
         }
@@ -183,6 +275,14 @@ export class BlameDecorationProvider implements vscode.Disposable {
             } else {
                 parts.push(this.formatDate(info.authorTime, dateFormat));
             }
+        }
+
+        if (showCommitId) {
+            parts.push(info.commit.substring(0, 7));
+        }
+
+        if (showSummary) {
+            parts.push(info.summary);
         }
 
         return parts.join(' · ');

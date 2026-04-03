@@ -48,11 +48,13 @@ export class BlameHoverProvider implements vscode.HoverProvider {
         markdown.appendMarkdown(`### $(git-commit) ${escapeMarkdown(blameInfo.summary)}\n\n`);
         markdown.appendMarkdown(`**$(person)** ${escapeMarkdown(blameInfo.author)} ${escapeMarkdown(blameInfo.authorMail)}\n\n`);
         markdown.appendMarkdown(`**$(calendar)** ${escapeMarkdown(dateStr)}\n\n`);
-        markdown.appendMarkdown(`**Commit:** \`${blameInfo.commit.substring(0, 7)}\`\n\n`);
+        markdown.appendMarkdown(`**Commit:** \`${blameInfo.commit.substring(0, 7)}\` `);
+        const copyArgs = encodeURIComponent(JSON.stringify([blameInfo.commit]));
+        markdown.appendMarkdown(`[$(copy)](command:tlcsdm-gitBlameInfo.copyCommitId?${copyArgs} "Copy full commit hash")\n\n`);
         markdown.appendMarkdown('---\n\n');
 
         // Open Commit - uses our registered command to show the commit diff
-        const openCommitArgs = encodeURIComponent(JSON.stringify([document.uri.toString(), blameInfo.commit]));
+        const openCommitArgs = encodeURIComponent(JSON.stringify([blameInfo.commit, blameInfo.filename]));
         markdown.appendMarkdown(
             `[$(git-commit) Open Commit](command:tlcsdm-gitBlameInfo.openCommit?${openCommitArgs} "View this commit")`
         );
@@ -61,6 +63,12 @@ export class BlameHoverProvider implements vscode.HoverProvider {
         // Open History - focuses the built-in timeline view
         markdown.appendMarkdown(
             `[$(history) Open History](command:tlcsdm-gitBlameInfo.openHistory "View file history")`
+        );
+        markdown.appendMarkdown('&nbsp;&nbsp;&nbsp;');
+
+        // Open Settings - opens extension settings
+        markdown.appendMarkdown(
+            `[$(gear) Settings](command:tlcsdm-gitBlameInfo.openSettings "Open extension settings")`
         );
 
         return new vscode.Hover(markdown, new vscode.Range(position.line, 0, position.line, 0));

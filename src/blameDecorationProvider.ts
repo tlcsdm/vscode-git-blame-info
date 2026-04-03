@@ -241,11 +241,11 @@ export class BlameDecorationProvider implements vscode.Disposable {
     private generateColorPair(index: number): { light: string; dark: string } {
         // Use golden angle to distribute hues evenly
         const hue = (index * 137.508) % 360;
-        const s = 60 + (index % 3) * 10; // saturation 60-80%
-        const l = 55 + (index % 4) * 5;  // lightness 55-70%
+        const saturation = 60 + (index % 3) * 10;
+        const lightness = 55 + (index % 4) * 5;
         return {
-            light: `hsla(${Math.round(hue)}, ${s}%, ${l}%, 0.18)`,
-            dark: `hsla(${Math.round(hue)}, ${s}%, ${l}%, 0.10)`,
+            light: `hsla(${Math.round(hue)}, ${saturation}%, ${lightness}%, 0.18)`,
+            dark: `hsla(${Math.round(hue)}, ${saturation}%, ${lightness}%, 0.10)`,
         };
     }
 

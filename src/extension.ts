@@ -19,8 +19,17 @@ export function activate(context: vscode.ExtensionContext): void {
     outputChannel = vscode.window.createOutputChannel('Tlcsdm Git Blame Info');
 
     const gitContentProvider = new GitContentProvider();
-    const gitHistoryProvider = new GitHistoryProvider((fileUri, commitHash) => {
-        openCommitDiff(fileUri, commitHash);
+    const gitHistoryProvider = new GitHistoryProvider({
+        openFileCommitDiff: (fileUri, commitHash, prevCommitHash, filename, prevFilename) => {
+            openFileHistoryDiff(fileUri, commitHash, prevCommitHash, filename, prevFilename);
+        },
+        copyCommitId: (commitHash) => {
+            vscode.env.clipboard.writeText(commitHash);
+            vscode.window.showInformationMessage(`Copied: ${commitHash.substring(0, 7)}`);
+        },
+        compareWithCurrent: (fileUri, commitHash, filename) => {
+            compareWithCurrentFile(fileUri, commitHash, filename);
+        }
     });
 
     context.subscriptions.push(
@@ -148,6 +157,49 @@ function showCommitInOutputChannel(cwd: string, commitHash: string): void {
         outputChannel.appendLine(stdout);
         outputChannel.show();
     });
+}
+
+function openFileHistoryDiff(fileUri: vscode.Uri, commitHash: string, prevCommitHash: string | null, filename: string, prevFilename: string): void {
+    const fileName = path.basename(fileUri.fsPath);
+    const shortHash = commitHash.substring(0, 7);
+
+    const afterUri = vscode.Uri.from({
+        scheme: 'git-blame-info',
+        path: fileUri.path,
+        query: commitHash,
+        fragment: filename || ''
+    });
+
+    if (prevCommitHash) {
+        const prevShortHash = prevCommitHash.substring(0, 7);
+        const beforeUri = vscode.Uri.from({
+            scheme: 'git-blame-info',
+            path: fileUri.path,
+            query: prevCommitHash,
+            fragment: prevFilename || ''
+        });
+        const title = `${fileName} (${prevShortHash} ↔ ${shortHash})`;
+        vscode.commands.executeCommand('vscode.diff', beforeUri, afterUri, title);
+    } else {
+        const beforeUri = vscode.Uri.from({ scheme: 'git-blame-info', path: fileUri.path, query: '' });
+        const title = `${fileName} (${shortHash} — initial commit)`;
+        vscode.commands.executeCommand('vscode.diff', beforeUri, afterUri, title);
+    }
+}
+
+function compareWithCurrentFile(fileUri: vscode.Uri, commitHash: string, filename: string): void {
+    const fileName = path.basename(fileUri.fsPath);
+    const shortHash = commitHash.substring(0, 7);
+
+    const commitUri = vscode.Uri.from({
+        scheme: 'git-blame-info',
+        path: fileUri.path,
+        query: commitHash,
+        fragment: filename || ''
+    });
+
+    const title = `${fileName} (${shortHash} ↔ Current)`;
+    vscode.commands.executeCommand('vscode.diff', commitUri, fileUri, title);
 }
 
 export function deactivate(): void {

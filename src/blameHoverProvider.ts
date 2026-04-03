@@ -60,9 +60,10 @@ export class BlameHoverProvider implements vscode.HoverProvider {
         );
         markdown.appendMarkdown('&nbsp;&nbsp;&nbsp;');
 
-        // Open History - focuses the built-in timeline view
+        // Open History - opens webview with full file history, highlighting this commit
+        const openHistoryArgs = encodeURIComponent(JSON.stringify([blameInfo.commit]));
         markdown.appendMarkdown(
-            `[$(history) Open History](command:tlcsdm-gitBlameInfo.openHistory "View file history")`
+            `[$(history) Open History](command:tlcsdm-gitBlameInfo.openHistory?${openHistoryArgs} "View file history")`
         );
         markdown.appendMarkdown('&nbsp;&nbsp;&nbsp;');
 

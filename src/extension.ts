@@ -5,6 +5,7 @@ import { BlameProvider } from './blameProvider';
 import { BlameDecorationProvider } from './blameDecorationProvider';
 import { BlameHoverProvider } from './blameHoverProvider';
 import { GitContentProvider } from './gitContentProvider';
+import { GitHistoryProvider } from './gitHistoryProvider';
 
 let blameProvider: BlameProvider;
 let blameDecorationProvider: BlameDecorationProvider;
@@ -18,6 +19,9 @@ export function activate(context: vscode.ExtensionContext): void {
     outputChannel = vscode.window.createOutputChannel('Tlcsdm Git Blame Info');
 
     const gitContentProvider = new GitContentProvider();
+    const gitHistoryProvider = new GitHistoryProvider((fileUri, commitHash) => {
+        openCommitDiff(fileUri, commitHash);
+    });
 
     context.subscriptions.push(
         vscode.workspace.registerTextDocumentContentProvider('git-blame-info', gitContentProvider),
@@ -43,8 +47,11 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }),
 
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openHistory', () => {
-            vscode.commands.executeCommand('timeline.focus');
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openHistory', (commitHash?: string) => {
+            const editor = vscode.window.activeTextEditor;
+            if (editor && editor.document.uri.scheme === 'file') {
+                gitHistoryProvider.show(editor.document.uri, commitHash);
+            }
         }),
 
         vscode.commands.registerCommand('tlcsdm-gitBlameInfo.openSettings', () => {

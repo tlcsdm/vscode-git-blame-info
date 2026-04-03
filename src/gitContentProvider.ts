@@ -15,6 +15,16 @@ export class GitContentProvider implements vscode.TextDocumentContentProvider {
             return Promise.resolve('');
         }
 
+        // Special marker: read current working file from disk (read-only virtual copy)
+        if (commit === '__WORKING_COPY__') {
+            return new Promise<string>((resolve) => {
+                vscode.workspace.fs.readFile(vscode.Uri.file(filePath)).then(
+                    data => resolve(Buffer.from(data).toString('utf8')),
+                    () => resolve('')
+                );
+            });
+        }
+
         const cwd = path.dirname(filePath);
 
         return new Promise<string>((resolve) => {

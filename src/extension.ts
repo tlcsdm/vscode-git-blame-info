@@ -198,8 +198,16 @@ function compareWithCurrentFile(fileUri: vscode.Uri, commitHash: string, filenam
         fragment: filename || ''
     });
 
+    // Use virtual document for current file so both sides are read-only
+    // and don't show blame decorations from the active editor
+    const currentUri = vscode.Uri.from({
+        scheme: 'git-blame-info',
+        path: fileUri.path,
+        query: '__WORKING_COPY__'
+    });
+
     const title = `${fileName} (${shortHash} ↔ Current)`;
-    vscode.commands.executeCommand('vscode.diff', commitUri, fileUri, title);
+    vscode.commands.executeCommand('vscode.diff', commitUri, currentUri, title);
 }
 
 export function deactivate(): void {

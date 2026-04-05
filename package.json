@@ -2,7 +2,7 @@
   "name": "tlcsdm-vscode-git-blame-info",
   "displayName": "Tlcsdm Git Blame Info",
   "description": "Display git blame information in the editor gutter with color-coded annotations, inspired by Eclipse EGit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "unknowIfGuestInDream",
   "icon": "images/icon.png",
   "license": "MIT",

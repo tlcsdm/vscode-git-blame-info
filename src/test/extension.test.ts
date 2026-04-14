@@ -3,11 +3,12 @@ import * as vscode from 'vscode';
 
 suite('Extension Test Suite', () => {
     const extensionId = 'unknowIfGuestInDream.tlcsdm-vscode-git-blame-info';
-    const versionAtLeast = (actual: string, minimum: string): boolean => {
+    const isVersionAtLeast = (actual: string, minimum: string): boolean => {
         const actualParts = actual.split('.').map((part) => parseInt(part, 10));
         const minimumParts = minimum.split('.').map((part) => parseInt(part, 10));
+        const maxParts = Math.max(actualParts.length, minimumParts.length);
 
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < maxParts; i++) {
             const left = actualParts[i] ?? 0;
             const right = minimumParts[i] ?? 0;
             if (left > right) {
@@ -55,8 +56,9 @@ suite('Extension Test Suite', () => {
     });
 
     test('serialize-javascript should use a patched version', () => {
+        // GHSA-5c6j-r48x-rmvq / GHSA-qj8w-gfj5-8c6v are fixed in >= 7.0.5
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const serializeJavascriptPackage = require('serialize-javascript/package.json') as { version: string };
-        assert.ok(versionAtLeast(serializeJavascriptPackage.version, '7.0.5'));
+        const serializeJsPackage = require('serialize-javascript/package.json') as { version: string };
+        assert.ok(isVersionAtLeast(serializeJsPackage.version, '7.0.5'));
     });
 });

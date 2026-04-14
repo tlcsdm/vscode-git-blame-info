@@ -11,7 +11,8 @@
     "url": "https://github.com/tlcsdm/vscode-git-blame-info"
   },
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.85.0",
+    "node": ">=20.0.0"
   },
   "categories": [
     "SCM Providers"
@@ -136,6 +137,6 @@
     "typescript-eslint": "^8.58.2"
   },
   "overrides": {
-    "serialize-javascript": "7.0.5"
+    "serialize-javascript": "^7.0.5"
   }
 }

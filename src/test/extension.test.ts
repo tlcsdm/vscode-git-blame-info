@@ -3,6 +3,23 @@ import * as vscode from 'vscode';
 
 suite('Extension Test Suite', () => {
     const extensionId = 'unknowIfGuestInDream.tlcsdm-vscode-git-blame-info';
+    const versionAtLeast = (actual: string, minimum: string): boolean => {
+        const actualParts = actual.split('.').map((part) => parseInt(part, 10));
+        const minimumParts = minimum.split('.').map((part) => parseInt(part, 10));
+
+        for (let i = 0; i < 3; i++) {
+            const left = actualParts[i] ?? 0;
+            const right = minimumParts[i] ?? 0;
+            if (left > right) {
+                return true;
+            }
+            if (left < right) {
+                return false;
+            }
+        }
+
+        return true;
+    };
 
     suiteSetup(async () => {
         const extension = vscode.extensions.getExtension(extensionId);
@@ -35,5 +52,11 @@ suite('Extension Test Suite', () => {
         assert.strictEqual(config.get('useRelativeDate'), false);
         assert.strictEqual(config.get('dateFormat'), 'YYYY-MM-DD');
         assert.strictEqual(config.get('columnWidth'), 50);
+    });
+
+    test('serialize-javascript should use a patched version', () => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const serializeJavascriptPackage = require('serialize-javascript/package.json') as { version: string };
+        assert.ok(versionAtLeast(serializeJavascriptPackage.version, '7.0.5'));
     });
 });

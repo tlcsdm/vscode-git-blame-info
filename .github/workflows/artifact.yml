@@ -11,6 +11,7 @@ on:
       - 'LICENSE'
       - '.gitignore'
       - 'images/**'
+  workflow_dispatch:      
 
 permissions:
   contents: read

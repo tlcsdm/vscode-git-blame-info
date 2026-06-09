@@ -2,6 +2,18 @@
 
 All notable changes to the "vscode-git-blame-info" extension will be documented in this file.
 
+## [1.0.2] - 2026-06-09
+
+### Fixed
+
+- Fix misleading "Show Revision Information" toggle on failure and prevent duplicate blame columns
+
+## [1.0.1] - 2026-04-05
+
+### Fixed
+
+- Include 'readme' directory in .vscodeignore to prevent unwanted files from being published
+
 ## [1.0.0] - 2026-04-01
 
 ### Added

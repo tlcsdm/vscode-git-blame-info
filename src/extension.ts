@@ -35,10 +35,14 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
         vscode.workspace.registerTextDocumentContentProvider('git-blame-info', gitContentProvider),
 
-        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.showRevisionInformation', () => {
-            blameDecorationProvider.activate();
-            blameHoverProvider.isActive = true;
-            updateContextForActiveEditor();
+        vscode.commands.registerCommand('tlcsdm-gitBlameInfo.showRevisionInformation', async () => {
+            const activated = await blameDecorationProvider.activate();
+            if (activated) {
+                blameHoverProvider.isActive = true;
+                updateContextForActiveEditor();
+            } else {
+                vscode.window.showWarningMessage('No revision information available for this file.');
+            }
         }),
 
         vscode.commands.registerCommand('tlcsdm-gitBlameInfo.hideRevisionInformation', () => {

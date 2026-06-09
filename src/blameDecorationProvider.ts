@@ -5,6 +5,8 @@ export class BlameDecorationProvider implements vscode.Disposable {
     private static readonly DEFAULT_COLUMN_WIDTH = 50;
     private static readonly COLUMN_MARGIN = '0 1.5em 0 0';
     private activeUris = new Set<string>();
+    private applyingUris = new Set<string>();
+    private applyGeneration = 0;
     private decorationTypes: vscode.TextEditorDecorationType[] = [];
     private savedWordWrap: { value: string; target: vscode.ConfigurationTarget } | undefined;
     private readonly commitColorPairs: { light: string; dark: string }[] = [
@@ -30,12 +32,30 @@ export class BlameDecorationProvider implements vscode.Disposable {
         this.restoreWordWrap();
     }
 
-    activate(): void {
+    async activate(): Promise<boolean> {
         const editor = vscode.window.activeTextEditor;
-        if (editor && editor.document.uri.scheme === 'file') {
-            this.activeUris.add(editor.document.uri.toString());
-            this.applyDecorations(editor);
-            this.disableWordWrap();
+        if (!editor || editor.document.uri.scheme !== 'file') {
+            return false;
+        }
+
+        const key = editor.document.uri.toString();
+        // Already active or activation in progress (e.g. user clicked twice on a
+        // large file before decorations finished). Avoid applying decorations
+        // twice, which would render duplicate blame columns.
+        if (this.activeUris.has(key) || this.applyingUris.has(key)) {
+            return this.activeUris.has(key);
+        }
+
+        this.applyingUris.add(key);
+        try {
+            const hasBlame = await this.applyDecorations(editor);
+            if (hasBlame) {
+                this.activeUris.add(key);
+                this.disableWordWrap();
+            }
+            return hasBlame;
+        } finally {
+            this.applyingUris.delete(key);
         }
     }
 
@@ -80,16 +100,25 @@ export class BlameDecorationProvider implements vscode.Disposable {
         this.decorationTypes = [];
     }
 
-    private async applyDecorations(editor: vscode.TextEditor): Promise<void> {
+    private async applyDecorations(editor: vscode.TextEditor): Promise<boolean> {
+        // Each run gets a unique generation. If a newer run starts while this one
+        // awaits git blame, the stale run aborts before applying decorations so
+        // only a single set of blame columns is ever rendered.
+        const generation = ++this.applyGeneration;
         this.clearDecorations();
 
         if (editor.document.uri.scheme !== 'file') {
-            return;
+            return false;
         }
 
         const blameInfo = await this.blameProvider.getBlame(editor.document.uri);
+
+        if (generation !== this.applyGeneration) {
+            return false;
+        }
+
         if (blameInfo.length === 0) {
-            return;
+            return false;
         }
 
         const config = vscode.workspace.getConfiguration('tlcsdm-gitBlameInfo');
@@ -208,6 +237,8 @@ export class BlameDecorationProvider implements vscode.Disposable {
             editor.setDecorations(spacerType, spacerDecorations);
             this.decorationTypes.push(spacerType);
         }
+
+        return true;
     }
 
     private disableWordWrap(): void {

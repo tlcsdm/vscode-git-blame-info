@@ -4,9 +4,9 @@ All notable changes to the "vscode-git-blame-info" extension will be documented 
 
 ## [1.0.2] - 2026-06-09
 
-### Fixed
+### Changed
 
-- Minor fixes and improvements
+- Updated CHANGELOG.md to include version history for 1.0.1 and 1.0.2 releases
 
 ## [1.0.1] - 2026-06-09
 

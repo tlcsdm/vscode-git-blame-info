@@ -13,4 +13,5 @@ tsconfig.json
 .editorconfig
 *.md
 !README.md
+!CHANGELOG.md
 readme/**
